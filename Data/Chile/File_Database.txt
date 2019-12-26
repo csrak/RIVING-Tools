@@ -1,0 +1,5 @@
+Here Files for chilean database are downloaded, they are not included in the repo, must be downloaded upon initialization
+
+Code for data scarping heavily based in https://towardsdatascience.com/web-scraping-html-tables-with-python-c9baba21059
+
+cr
