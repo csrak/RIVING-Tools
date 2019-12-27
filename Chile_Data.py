@@ -5,7 +5,12 @@ import os
 from pathlib import Path
 #from bs4 import BeautifulSoup
 
-#imports data from chilean stocks, into csv file into /data/chile/ folder
+
+###
+#####
+###### 
+#    Functions for scraping data, general functions and some hard-code for specific scraping is found here
+#       Specifically for importing data from chilean stocks, into csv file, mostly into ~/data/chile/ folder
 
 month='03'
 year='2019'
@@ -26,6 +31,10 @@ def download_list(month,year):
     datafold='\\Data\\Chile\\'
     open(wd+datafold+file_name, 'wb').write(myfile.content)
 
+
+
+
+
 #Selects right url depending on scraping to do
 def url_generator(site,month,year):
     url='no url found'
@@ -40,6 +49,9 @@ def url_generator(site,month,year):
     else:
         return url
     return url
+
+
+
 
 
 #Create pandas DataFrame from list in an html webpage
@@ -92,6 +104,14 @@ def scrape_lists(url):
 #########################################################
 ######################################################### 
 
+
+
+
+
+
+
+
+
 # 
 #Scrap fillings obtains the fillings from a provided list in zip format (XBRL inside)
 #
@@ -120,6 +140,9 @@ def scrap_fillings(companies_list,n,month, year):
 
 
 
+
+
+
 #
 #Function read_data  rescues previously saved data from csv
 #Data is saved as a pandas DataFrame and returned
@@ -136,10 +159,14 @@ def read_data(filename,datafold):
     return df
 
 
+
+
+
+
 #scrap_rutlists obtains lsit of profiles of companies who have filled recently
 def scrap_rutlist(month,year):
     url=url_generator('cmf',month,year)
-    df=scrape_lists('','',url)
+    df=scrape_lists(url)
     df = df.drop("Fecha Primer envío", axis=1)
     df = df.drop("Fecha último envío", axis=1)
     df = df.drop("Tipo Balance", axis=1)
@@ -152,19 +179,30 @@ def scrap_rutlist(month,year):
     export_csv = df.to_csv(datafold+file_name, index = None, header=True)
 
 
+
+
 #scrap_MW obtains list of companies in the Santiago market
 def scrap_mw():
     url=url_generator('mwcl','0','0')
     df=scrape_lists(url)
     df = df.drop("Exchange", axis=1)
     print(df.head())
+    tickers=[]
+    for i in range (0,df.shape[0]): #Here we extract tickers from the name list 
+        tickers.append(df.loc[i, 'Name'])
+        pos1=tickers[i].find('(')
+        pos2=tickers[i].find(')')  # same as len just little easier to read
+        tickers[i]=tickers[i][pos1+1:pos2]   
+        pos1=pos2-pos1+1  #Saving variables, pos1 is now how many chars we are erasing
+        df.loc[i, 'Name']=(df.loc[i, 'Name'])[:-pos1]
+    df['Ticker']=tickers
+
     wd=os.getcwd()
     #folder=Path(wd).parent
     #print(folder)
     file_name='registered_stocks_mw.csv'
     datafold=wd+'\\Data\\Chile\\'
     export_csv = df.to_csv(datafold+file_name, index = None, header=True)
-
 
 
 
