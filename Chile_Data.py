@@ -3,6 +3,8 @@ import lxml.html as lh
 import pandas as pd
 import os
 from pathlib import Path
+from difflib import SequenceMatcher
+import re
 #from bs4 import BeautifulSoup
 
 
@@ -120,7 +122,7 @@ def scrap_fillings(companies_list,n,month, year):
        # http://www.cmfchile.cl/institucional/inc/inf_financiera/ifrs/safec_ifrs_verarchivo.php?auth=&send=&
        # rut=77750920&mm=03&aa=2019&archivo=77750920_201903_I.zip&desc_archivo=Estados%20financieros%20(XBRL)&tipo_archivo=XBRL
     template = 'http://www.cmfchile.cl/institucional/inc/inf_financiera/ifrs/safec_ifrs_verarchivo.php?auth=&send=&'
-    for  i in n:
+    for  i in range (0,companies_list.shape[0]):
         rut=companies_list[i,2]  ##2 is the column of ruts
 
         url=template+'rut='+rut+'&mm='+month+'&aa='+year+'&archivo='+rut+'_'+year+month+'_I.zip&desc_archivo=Estados%20financieros%20(XBRL)&tipo_archivo=XBRL'
@@ -152,6 +154,7 @@ def read_data(filename,datafold):
     wd=os.getcwd()
     if os.path.exists(wd+datafold+filename):
         df=pd.read_csv(wd+datafold+filename, header=0)
+        df = df.astype(str)
     else:
         print('File not found in '+ wd+datafold+filename)
         return 0
@@ -193,7 +196,7 @@ def scrap_mw():
         pos1=tickers[i].find('(')
         pos2=tickers[i].find(')')  # same as len just little easier to read
         tickers[i]=tickers[i][pos1+1:pos2]   
-        pos1=pos2-pos1+1  #Saving variables, pos1 is now how many chars we are erasing
+        pos1=pos2-pos1+1  #Saving variables, pos1 is now how many chars we are erasing at the end of the name (contained ticker)
         df.loc[i, 'Name']=(df.loc[i, 'Name'])[:-pos1]
     df['Ticker']=tickers
 
@@ -215,28 +218,103 @@ def get_ruts(month, year,file_name, datafold):
     #file_name='registered_stocks_'+month+'-'+year+'.csv'
     #datafold='\\Data\\Chile\\'
     df=read_data(file_name,datafold)
-    df = df.astype(str)
-
+    #df = df.astype(str)
+    print(df.head())
     #We take out the verifier code of each rut since it is not used
     for i in range (0,df.shape[0]):
         df.loc[i, 'Rut']=(df.loc[i, 'Rut'])[:-2]      
     return df.loc[:, 'Rut']
 
-#########################################################
-#########################################################
-#########################################################
 
-scrap_mw()
+#########################################################
+#########################################################
+#########################################################
+#
+# Tick2Rut get ruts from tickers lsit given, debugging functions are commented for including to final DataFrame
+#
+
+def Tick2Rut(ruts,tickers):
+    rut_order=[]
+    #test_order=[]
+    #test_order2=[]
+
+    ## Ranges for ¨For¨ Loops
+    range1=tickers.shape[0]  
+    range2=ruts.shape[0]
+
+
+    for i in range (0,range1): #Here we pair right ticker with its rut
+        rut_order.append('0')
+        #test_order.append('0')
+        #test_order2.append(0)
+        curr_simil=0
+        #print(ruts.head())
+        #print(tickers.head())
+        for j in range (0,range2):
+            a=tickers.loc[i, 'Name']
+            b=ruts.loc[j, 'Razón social']
+
+            #Fix Formatting
+
+            b=b.upper()
+            a=a.upper()
+            b=re.sub('Ñ','N',b)
+            ### Fix Common errors
+           
+            b=re.sub('S.A.','',b)
+            b=re.sub('ADMINISTRADORA GENERAL DE FONDOS','',b)
+            a=re.sub('S.A.','',a)
+            a=re.sub('ADMINISTRADORA GENERAL DE FONDOS','',a)
+            a=re.sub('A.F.P.','ADMINISTRADORA  DE FONDOS DE PENSIONES',a)
+            a=re.sub('FONDO DE INVERSION','',a)
+
+            ##Some abbreviations cause problems too, company specific hardcoding below
+
+            a=re.sub('ARBITRAGE','',a)
+
+            simil=SequenceMatcher(None, a, b).ratio() #We compare names
+            #Most similar name stays
+            if simil > curr_simil:
+                rut_order[i]=ruts.loc[j, 'Rut']
+                curr_simil=simil
+                #test_order[i]=b
+                #test_order2[i]=simil
+            if j==(range2-1) and curr_simil<0.715:
+                    rut_order[i]= 'ERROR HIGH CHECK MANUALLY= '+str(rut_order[i])    
+            #print(a)
+            #print(b)
+            #print('Similitud=')
+            #print(curr_simil)
+            #print('\n')
+    #tickers['Check']=test_order  
+    #tickers['SIMIL']=test_order2      
+    tickers['Tick']=rut_order
+    
+    
+
+    return tickers
+
+#scrap_mw()
 
 
 
 
 
 #
-#file_name='registered_stocks_'+month+'-'+year+'.csv'
-#datafold='\\Data\\Chile\\'
-#ruts=get_ruts(month,year,file_name,datafold)
-#print(ruts)
+file_name='registered_stocks_'+month+'-'+year+'.csv'
+datafold='\\Data\\Chile\\'
+ruts=read_data(file_name,datafold)
+
+file_name='registered_stocks_mw.csv'
+tick=read_data(file_name,datafold)
+ruts=Tick2Rut(ruts,tick)
+
+wd=os.getcwd()
+file_name='registered_stocks_TICKER.csv'
+datafold=wd+'\\Data\\Chile\\'
+export_csv = ruts.to_csv(datafold+file_name, index = None, header=True)
+
+print(ruts)
 
 
 #print(df.head())
