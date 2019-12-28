@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from difflib import SequenceMatcher
 import re
-#from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 
 
 ###
@@ -14,10 +14,57 @@ import re
 #    Functions for scraping data, general functions and some hard-code for specific scraping is found here
 #       Specifically for importing data from chilean stocks, into csv file, mostly into ~/data/chile/ folder
 
-month='03'
-year='2019'
+
+def scrap_company_Links(companies_list,month, year):
+    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+    url='http://www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs.php?mm_ifrs='+month+'&aa_ifrs='+year
+    page = requests.get(url, headers=agent) 
+    page=lh.fromstring(page.content)
+
+    #We obtain every <a and take the URLS to a list
+    link = page.xpath('//a')
+    out=['Not Found']*companies_list.shape[0]
+    
+        
+    #Selected format is searched 0=PDF 1=XBLR 2=BOTH
+    for link in link:
+        for i in range (0,companies_list.shape[0]):
+            rut=companies_list.loc[i,'Rut']
+            if 'href' in link.attrib and rut in link.attrib['href']:
+                out[i]=link.attrib['href']
+                out[i]='http://www.cmfchile.cl/institucional/mercados/'+ out[i]
+            
+                
+    return out
 
 
+def scrap_file_links(url,filet):
+    if filet==999:
+        return 'Invalid Link'
+    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+    page = requests.get(url, headers=agent) 
+    page=lh.fromstring(page.content)
+
+    #We obtain every <a and take the URLS to a list
+    link = page.xpath('//a')
+    out=''
+    for link in link:
+        
+    #Selected format is searched 0=PDF 1=XBLR 2=BOTH
+        if filet==0 and 'href' in link.attrib and 'Estados financieros (PDF)' in link.attrib['href']:
+            out=link.attrib['href']
+            out='http://www.cmfchile.cl/institucional'+ out[2:len(out)]  
+            out=re.sub(' ','%20',out)
+        elif filet==1 and 'href' in link.attrib and 'Estados financieros (XBRL)' in link.attrib['href']:
+            out=link.attrib['href']
+            out='http://www.cmfchile.cl/institucional'+ out[2:len(out)] 
+            out=re.sub(' ','%20',out)
+      
+    return out
+
+#print( scrap_File_Links('http://www.cmfchile.cl/institucional/mercados/entidad.php?auth=&send=&mercado=V&rut=96885880&rut_inc=&grupo=0&tipoentidad=RVEMI&vig=VI&row=AAAwy2ACTAAABzBAAN&mm=03&aa=2019&tipo=C&orig=lista&control=svs&tipo_norma=IFRS&pestania=3',0) )
+#a=scrap_company_Links('96885880','03','2019')
+#print(a)
 #Download list not working/not used yet
 def download_list(month,year):
     # www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs_excel2.php?aa=2019&mm=03
@@ -57,7 +104,7 @@ def url_generator(site,month,year):
 
 
 #Create pandas DataFrame from list in an html webpage
-def scrape_lists(url):
+def scrap_lists(url):
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     page = requests.get(url, headers=agent)
     doc = lh.fromstring(page.content)#Parse data that are stored between <tr>..</tr> of HTML
@@ -117,25 +164,21 @@ def scrape_lists(url):
 # 
 #Scrap fillings obtains the fillings from a provided list in zip format (XBRL inside)
 #
-def scrap_fillings(companies_list,n,month, year):
-        #Download 
-       # http://www.cmfchile.cl/institucional/inc/inf_financiera/ifrs/safec_ifrs_verarchivo.php?auth=&send=&
-       # rut=77750920&mm=03&aa=2019&archivo=77750920_201903_I.zip&desc_archivo=Estados%20financieros%20(XBRL)&tipo_archivo=XBRL
-    template = 'http://www.cmfchile.cl/institucional/inc/inf_financiera/ifrs/safec_ifrs_verarchivo.php?auth=&send=&'
-    for  i in range (0,companies_list.shape[0]):
-        rut=companies_list[i,2]  ##2 is the column of ruts
+def scrap_fillings(urls,filenames):
+        #Download fillings according to obtained list of URLs
+        for i in range (0,len(urls)):
+            if filenames[i] == '0':
+                continue
+            else:
+                url=urls[i]
+                agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+                myfile = requests.get(url, headers=agent)
 
-        url=template+'rut='+rut+'&mm='+month+'&aa='+year+'&archivo='+rut+'_'+year+month+'_I.zip&desc_archivo=Estados%20financieros%20(XBRL)&tipo_archivo=XBRL'
-
-        agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-        myfile = requests.get(url, headers=agent)
-
-        wd=os.getcwd()
-        #folder=Path(wd).parent
-        #print(folder)
-        file_name=rut+'_'+month+year+'.zip'
-        datafold='\\Data\\Chile\\'
-        open(wd+datafold+file_name, 'wb').write(myfile.content)
+                wd=os.getcwd()
+                #folder=Path(wd).parent
+                #print(folder)
+                datafold='\\Data\\Chile\\'
+                open(wd+datafold+filenames[i], 'wb').write(myfile.content)
 #########################################################
 #########################################################
 #########################################################
@@ -169,7 +212,7 @@ def read_data(filename,datafold):
 #scrap_rutlists obtains lsit of profiles of companies who have filled recently
 def scrap_rutlist(month,year):
     url=url_generator('cmf',month,year)
-    df=scrape_lists(url)
+    df=scrap_lists(url)
     df = df.drop("Fecha Primer envío", axis=1)
     df = df.drop("Fecha último envío", axis=1)
     df = df.drop("Tipo Balance", axis=1)
@@ -179,7 +222,7 @@ def scrap_rutlist(month,year):
     #print(folder)
     file_name='registered_stocks_'+month+'-'+year+'.csv'
     datafold=wd+'\\Data\\Chile\\'
-    export_csv = df.to_csv(datafold+file_name, index = None, header=True)
+    df.to_csv(datafold+file_name, index = None, header=True)
 
 
 
@@ -187,7 +230,7 @@ def scrap_rutlist(month,year):
 #scrap_MW obtains list of companies in the Santiago market
 def scrap_mw():
     url=url_generator('mwcl','0','0')
-    df=scrape_lists(url)
+    df=scrap_lists(url)
     df = df.drop("Exchange", axis=1)
     print(df.head())
     tickers=[]
@@ -205,7 +248,7 @@ def scrap_mw():
     #print(folder)
     file_name='registered_stocks_mw.csv'
     datafold=wd+'\\Data\\Chile\\'
-    export_csv = df.to_csv(datafold+file_name, index = None, header=True)
+    df.to_csv(datafold+file_name, index = None, header=True)
 
 
 
@@ -214,17 +257,14 @@ def scrap_mw():
 #Formatting is done to insert into url for scraping fillings
 #
 
-def get_ruts(month, year,file_name, datafold):
+def get_ruts(df):
     #file_name='registered_stocks_'+month+'-'+year+'.csv'
     #datafold='\\Data\\Chile\\'
-    df=read_data(file_name,datafold)
     #df = df.astype(str)
-    print(df.head())
     #We take out the verifier code of each rut since it is not used
     for i in range (0,df.shape[0]):
-        df.loc[i, 'Rut']=(df.loc[i, 'Rut'])[:-2]      
-    return df.loc[:, 'Rut']
-
+        df.loc[i, 'Rut']=(df.loc[i, 'Rut'])[:-2]    
+    return df
 
 #########################################################
 #########################################################
@@ -235,6 +275,7 @@ def get_ruts(month, year,file_name, datafold):
 
 def Tick2Rut(ruts,tickers):
     rut_order=[]
+    file_order=[]
     #test_order=[]
     #test_order2=[]
 
@@ -245,6 +286,7 @@ def Tick2Rut(ruts,tickers):
 
     for i in range (0,range1): #Here we pair right ticker with its rut
         rut_order.append('0')
+        file_order.append('0')
         #test_order.append('0')
         #test_order2.append(0)
         curr_simil=0
@@ -276,6 +318,7 @@ def Tick2Rut(ruts,tickers):
             #Most similar name stays
             if simil > curr_simil:
                 rut_order[i]=ruts.loc[j, 'Rut']
+                file_order[i]=ruts.loc[j, 'Tipo Envio']
                 curr_simil=simil
                 #test_order[i]=b
                 #test_order2[i]=simil
@@ -288,33 +331,16 @@ def Tick2Rut(ruts,tickers):
             #print('\n')
     #tickers['Check']=test_order  
     #tickers['SIMIL']=test_order2      
-    tickers['Tick']=rut_order
-    
-    
-
+    tickers['Rut']=rut_order
+    tickers['File']=file_order
     return tickers
 
 #scrap_mw()
 
 
 
-
-
 #
-file_name='registered_stocks_'+month+'-'+year+'.csv'
-datafold='\\Data\\Chile\\'
-ruts=read_data(file_name,datafold)
 
-file_name='registered_stocks_mw.csv'
-tick=read_data(file_name,datafold)
-ruts=Tick2Rut(ruts,tick)
-
-wd=os.getcwd()
-file_name='registered_stocks_TICKER.csv'
-datafold=wd+'\\Data\\Chile\\'
-export_csv = ruts.to_csv(datafold+file_name, index = None, header=True)
-
-print(ruts)
 
 
 #print(df.head())
