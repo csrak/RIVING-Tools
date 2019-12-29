@@ -14,6 +14,22 @@ from bs4 import BeautifulSoup
 #    Functions for scraping data, general functions and some hard-code for specific scraping is found here
 #       Specifically for importing data from chilean stocks, into csv file, mostly into ~/data/chile/ folder
 
+def getIndexes(dfObj, value):
+    #''' Get index positions of value in dataframe i.e. dfObj.'''
+    listOfPos = list()
+    # Get bool dataframe with True at positions where the given value exists
+    result = dfObj.isin([value])
+    # Get list of columns that contains the value
+    seriesObj = result.any()
+    columnNames = list(seriesObj[seriesObj == True].index)
+    # Iterate over list of columns and fetch the rows indexes where value exists
+    for col in columnNames:
+        rows = list(result[col][result[col] == True].index)
+        for row in rows:
+            listOfPos.append((row, col))
+            # Return a list of tuples indicating the positions of value in the dataframe
+    return listOfPos
+
 
 def scrap_company_Links(companies_list,month, year):
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
@@ -51,16 +67,19 @@ def scrap_file_links(url,filet):
     for link in link:
         
     #Selected format is searched 0=PDF 1=XBLR 2=BOTH
-        if filet==0 and 'href' in link.attrib and 'Estados financieros (PDF)' in link.attrib['href']:
-            out=link.attrib['href']
-            out='http://www.cmfchile.cl/institucional'+ out[2:len(out)]  
-            out=re.sub(' ','%20',out)
-        elif filet==1 and 'href' in link.attrib and 'Estados financieros (XBRL)' in link.attrib['href']:
+        if  'href' in link.attrib and 'Estados financieros (XBRL)' in link.attrib['href']:
             out=link.attrib['href']
             out='http://www.cmfchile.cl/institucional'+ out[2:len(out)] 
             out=re.sub(' ','%20',out)
+            filet=1
+        elif 'href' in link.attrib and 'Estados financieros (PDF)' in link.attrib['href']:
+            out=link.attrib['href']
+            out='http://www.cmfchile.cl/institucional'+ out[2:len(out)]  
+            out=re.sub(' ','%20',out)
+            filet=0
+        
       
-    return out
+    return out,filet
 
 #print( scrap_File_Links('http://www.cmfchile.cl/institucional/mercados/entidad.php?auth=&send=&mercado=V&rut=96885880&rut_inc=&grupo=0&tipoentidad=RVEMI&vig=VI&row=AAAwy2ACTAAABzBAAN&mm=03&aa=2019&tipo=C&orig=lista&control=svs&tipo_norma=IFRS&pestania=3',0) )
 #a=scrap_company_Links('96885880','03','2019')
