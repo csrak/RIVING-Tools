@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from difflib import SequenceMatcher
 import re
-import tabula
+import tabula #install tabula-py
 import PyPDF2
 import Chile_Data as CL
 
@@ -22,7 +22,7 @@ def Format_Data(month, year):
     #Reads files downloaded from databases
 
     file_name='registered_stocks_'+month+'-'+year+'.csv'
-    datafold='\\Data\\Chile\\'
+    datafold='/Data/Chile/'
     ruts=CL.read_data(file_name,datafold)
 
     file_name='registered_stocks_mw.csv'
@@ -34,7 +34,7 @@ def Format_Data(month, year):
     # Finally saves results 
     wd=os.getcwd()
     file_name='registered_stocks_TICKER'+month+'-'+year+'.csv'
-    datafold=wd+'\\Data\\Chile\\'
+    datafold=wd+'/Data/Chile/'
     ruts.to_csv(datafold+file_name, index = None, header=True)
     #Returns results in case of use
     return ruts
@@ -68,9 +68,9 @@ def get_fillings(month,year,df):
         flinks.append(temp[0])
         filet=temp[1]
         if  filet==1:# file type XBLR
-            fnames[i]=month+'-'+year+'\\'+df.loc[i,'Ticker']+'_'+month+'-'+year+'.zip'
+            fnames[i]=month+'-'+year+'/'+df.loc[i,'Ticker']+'_'+month+'-'+year+'.zip'
         elif filet==0:
-            fnames[i]=month+'-'+year+'\\'+df.loc[i,'Ticker']+'_'+month+'-'+year+'.pdf'
+            fnames[i]=month+'-'+year+'/'+df.loc[i,'Ticker']+'_'+month+'-'+year+'.pdf'
         
 
     print(wd+datafold+month+'-'+year)    
@@ -115,7 +115,7 @@ month='03'
 year='2019'
 wd=os.getcwd()   
 #file_name='registered_stocks_TICKER'+month+'-'+year+'.csv'
-#datafold='\\Data\\Chile\\'
+#datafold='/Data/Chile/'
 
 #df=CL.read_data(file_name,datafold)
 #get_fillings(month,year,df)
