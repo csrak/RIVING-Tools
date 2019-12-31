@@ -54,7 +54,6 @@ def Update_Data(month, year):
     return 0
 
 def get_fillings(month,year,df): 
-    Format_Data(month,year)
     CL.get_ruts(df)
     print(df)
     a=CL.scrap_company_Links(df,month,year)
@@ -103,19 +102,28 @@ def read_pdf_fil(file_name,datafold):
     #print(df.loc[3,'Pagos Anticipados'])
     
 
+def read_xlbr():
+    soup = BeautifulSoup(xbrl_str, 'lxml')
+    tag_list = soup.find_all()
+    for tag in tag_list:
+        if tag.name == 'us-gaap:stockholdersequity':
+            print("Stockholder's equity: " + tag.text)
+
+
+
 month='03'
 year='2019'
 wd=os.getcwd()   
-file_name='registered_stocks_TICKER'+month+'-'+year+'.csv'
-datafold='\\Data\\Chile\\'
+#file_name='registered_stocks_TICKER'+month+'-'+year+'.csv'
+#datafold='\\Data\\Chile\\'
 
-df=CL.read_data(file_name,datafold)
-get_fillings(month,year,df)
+#df=CL.read_data(file_name,datafold)
+#get_fillings(month,year,df)
 #receives month, year and dataframe with list of companies (must have Rut and File Type)
 
-#file_name='CUPRUM'+'_'+month+'-'+year+'.pdf'
-#datafold=wd+'\\Data\\Chile\\'+month+'-'+year+'\\'
-#read_pdf_fil(file_name,datafold)
+file_name='CUPRUM'+'_'+month+'-'+year+'.pdf'
+datafold=wd+'/Data/Chile/'+month+'-'+year+'/'
+read_pdf_fil(file_name,datafold)
 
 
 

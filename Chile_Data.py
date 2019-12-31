@@ -96,7 +96,7 @@ def download_list(month,year):
     #folder=Path(wd).parent
     #print(folder)
     file_name='registered_stocks_'+month+'-'+year+'.xls'
-    datafold='\\Data\\Chile\\'
+    datafold='/Data/Chile/'
     open(wd+datafold+file_name, 'wb').write(myfile.content)
 
 
@@ -196,7 +196,7 @@ def scrap_fillings(urls,filenames):
                 wd=os.getcwd()
                 #folder=Path(wd).parent
                 #print(folder)
-                datafold='\\Data\\Chile\\'
+                datafold='/Data/Chile/'
                 open(wd+datafold+filenames[i], 'wb').write(myfile.content)
 #########################################################
 #########################################################
@@ -240,7 +240,7 @@ def scrap_rutlist(month,year):
     #folder=Path(wd).parent
     #print(folder)
     file_name='registered_stocks_'+month+'-'+year+'.csv'
-    datafold=wd+'\\Data\\Chile\\'
+    datafold=wd+'/Data/Chile/'
     df.to_csv(datafold+file_name, index = None, header=True)
 
 
@@ -266,7 +266,7 @@ def scrap_mw():
     #folder=Path(wd).parent
     #print(folder)
     file_name='registered_stocks_mw.csv'
-    datafold=wd+'\\Data\\Chile\\'
+    datafold=wd+'/Data/Chile/'
     df.to_csv(datafold+file_name, index = None, header=True)
 
 
@@ -278,7 +278,7 @@ def scrap_mw():
 
 def get_ruts(df):
     #file_name='registered_stocks_'+month+'-'+year+'.csv'
-    #datafold='\\Data\\Chile\\'
+    #datafold='/Data/Chile/'
     #df = df.astype(str)
     #We take out the verifier code of each rut since it is not used
     for i in range (0,df.shape[0]):
