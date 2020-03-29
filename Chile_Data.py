@@ -6,7 +6,7 @@ from pathlib import Path
 from difflib import SequenceMatcher
 import re
 from bs4 import BeautifulSoup
-
+from zipfile import ZipFile
 
 ###
 #####
@@ -198,6 +198,14 @@ def scrap_fillings(urls,filenames):
                 #print(folder)
                 datafold='/Data/Chile/'
                 open(wd+datafold+filenames[i], 'wb').write(myfile.content)
+                temp=wd+datafold+filenames[i]
+                if (temp!=temp.replace('.zip', '')):
+                    temp=temp.replace('.zip', '')
+                    if not os.path.exists(temp):
+                        os.mkdir(temp)
+                    with ZipFile(wd+datafold+filenames[i], 'r') as zipObj:
+                # Extract all the contents of zip file in different directory
+                        zipObj.extractall(temp)
 #########################################################
 #########################################################
 #########################################################
