@@ -17,17 +17,42 @@ from zipfile import ZipFile
 
 
 
+#We define hardcoded sets and lists that we will need to find the right values when parsing the fillings
 
-#We define hardcoded sets and lsits that we will need to find the right values when parsing the fillings
-present_trimester_tags={'TrimestreActual','p6','id113','Actual','ID_P3','CierreTrimestreActual','p1_Instant','id349'} #Only present trimester
-weirder_tags= {'ctx_instant_Fecha_20190331','ctx_instant_Fecha_20190630','ctx_instant_Fecha_20190930','ctx_instant_Fecha_20191231','ID_P1'} # Present trimester, but may be wrong
-cumulative_tags={'TrimestreAcumuladoActual','p1_Duration','id11792','AcumuladoAnoActual','id11'} #YearToDate
-CLP_currency_tags={'CLP','id14'} #Tags to identify chilean currency
 months=['03','06','09','12'] #Possible months
 years=range(2000,2100) # years are hardcoded for no good reason, just because
 years=[str(i) for i in years]
 years=set(years) #Set for faster search
 
+present_trimester_tags={'TrimestreActual','p6','id113','Actual','ID_P3','CierreTrimestreActual','p1_Instant','id349'} #Only present trimester
+weirder_tags= {'ctx_instant_Fecha_20190331','ctx_instant_Fecha_20190630','ctx_instant_Fecha_20190930','ctx_instant_Fecha_20191231','ID_P1'} # Present trimester, but may be wrong
+cumulative_tags={'TrimestreAcumuladoActual','p1_Duration','id11792','AcumuladoAnoActual','id11'} #YearToDate
+CLP_currency_tags={'CLP','id14'} #Tags to identify chilean currency
+
+#Numbers
+lista=[['Revenue','ifrs-full:revenue'],
+['Net Profit','ifrs-full:ProfitLoss'],
+['Operating Profit','ifrs-full:profitlossfromcontinuingoperations'],
+# Equity and Liabilites
+['Cash','ifrs-full:CashAndCashEquivalents'],
+['Current Assets','ifrs-full:CurrentAssets'],
+['Non-Current Assets','ifrs-full:NoncurrentAssets'],
+['Goodwill','ifrs-full:Goodwill'],
+['Intangible Assets','ifrs-full:IntangibleAssetsOtherThanGoodwill'],
+['Assets','ifrs-full:Assets'], #Banks may have Assets > Current + Noncurrent, since banking assets are separated
+['Current Liabilities','ifrs-full:CurrentLiabilities'],
+['Equity','ifrs-full:EquityAttributableToOwnersOfParent'],
+['Shares','ifrs-full:NumberOfSharesOutstanding'],
+# Secondary Equity and Liabilites
+['Inventories','ifrs-full:Inventories'],
+['Shares Authorized','ifrs-full:NumberOfSharesAuthorised'],
+#Cash Flows
+['Net Operating Cashflows','ifrs-full:CashFlowsFromUsedInOperatingActivities'],
+['Net Investing Cashflows','ifrs-full:CashFlowsFromUsedInInvestingActivities'],
+['Net Financing Cashflows','ifrs-full:CashFlowsFromUsedInFinancingActivities'],
+['Bank: Non-Banking investing cashflow','cl-hb:SubtotalFlujosEfectivoNetosProcedentesUtilizadosActividadesInversionNegociosNoBancarios'],
+['Bank: Banking investing cashflow','cl-hb:SubtotalFlujosEfectivoNetosProcedentesUtilizadosActividadesInversionServiciosBancarios'],
+]
 ##
 ##
 # Format_Data -> Obtains and formats data already downloaded from updated databases and creates joint database
@@ -335,30 +360,7 @@ def test_xblr(param, param2,atparam2, folder):
 
 
 
-#Numbers
-lista=[['Revenue','ifrs-full:revenue'],
-['Net Profit','ifrs-full:ProfitLoss'],
-['Operating Profit','ifrs-full:profitlossfromcontinuingoperations'],
-# Equity and Liabilites
-['Cash','ifrs-full:CashAndCashEquivalents'],
-['Current Assets','ifrs-full:CurrentAssets'],
-['Non-Current Assets','ifrs-full:NoncurrentAssets'],
-['Goodwill','ifrs-full:Goodwill'],
-['Intangible Assets','ifrs-full:IntangibleAssetsOtherThanGoodwill'],
-['Assets','ifrs-full:Assets'], #Banks may have Assets > Current + Noncurrent, since banking assets are separated
-['Current Liabilities','ifrs-full:CurrentLiabilities'],
-['Equity','ifrs-full:EquityAttributableToOwnersOfParent'],
-['Shares','ifrs-full:NumberOfSharesOutstanding'],
-# Secondary Equity and Liabilites
-['Inventories','ifrs-full:Inventories'],
-['Shares Authorized','ifrs-full:NumberOfSharesAuthorised'],
-#Cash Flows
-['Net Operating Cashflows','ifrs-full:CashFlowsFromUsedInOperatingActivities'],
-['Net Investing Cashflows','ifrs-full:CashFlowsFromUsedInInvestingActivities'],
-['Net Financing Cashflows','ifrs-full:CashFlowsFromUsedInFinancingActivities'],
-['Bank: Non-Banking investing cashflow','cl-hb:SubtotalFlujosEfectivoNetosProcedentesUtilizadosActividadesInversionNegociosNoBancarios'],
-['Bank: Banking investing cashflow','cl-hb:SubtotalFlujosEfectivoNetosProcedentesUtilizadosActividadesInversionServiciosBancarios'],
-]
+
 
 #Useful Data
 #list2=[['Major Customer Risk','ifrs-full:DisclosureOfSegmentsMajorCustomersExplanatory'],]
