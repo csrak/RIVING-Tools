@@ -15,12 +15,24 @@ from zipfile import ZipFile
 
 
 
+
+
+
+#We define hardcoded sets and lsits that we will need to find the right values when parsing the fillings
+present_trimester_tags={'TrimestreActual','p6','id113','Actual','ID_P3','CierreTrimestreActual','p1_Instant','id349'} #Only present trimester
+weirder_tags= {'ctx_instant_Fecha_20190331','ctx_instant_Fecha_20190630','ctx_instant_Fecha_20190930','ctx_instant_Fecha_20191231','ID_P1'} # Present trimester, but may be wrong
+cumulative_tags={'TrimestreAcumuladoActual','p1_Duration','id11792','AcumuladoAnoActual','id11'} #YearToDate
+CLP_currency_tags={'CLP','id14'} #Tags to identify chilean currency
+months=['03','06','09','12'] #Possible months
+years=range(2000,2100) # years are hardcoded for no good reason, just because
+years=[str(i) for i in years]
+years=set(years) #Set for faster search
+
 ##
 ##
 # Format_Data -> Obtains and formats data already downloaded from updated databases and creates joint database
-#  ###### USE ONLY IF UPDATE DATA THROWS NO ERRORS  ##############
+#  ###### USE ONLY IF UPDATE DATA THROWS NO ERROR  ##############
 ####################################################################
-
 def Format_Data(month, year):
 
     #Reads files downloaded from databases
@@ -69,6 +81,7 @@ def get_fillings(month,year,df,datafold,wd):
     for i in range (0,len(a)):
         if a[i]=='Not Found':
             filet=999
+        print('Scraping '+a[i]+' Please wait...')
         temp=CL.scrap_file_links(a[i],filet)
         flinks.append(temp[0])
         filet=temp[1]
@@ -106,18 +119,41 @@ def read_pdf_fil(file_name,datafold):
             print(ix)
     #print(df.loc[3,'Pagos Anticipados'])
     
-def upandgetem(month,year): # Updates tickers, list of companies and then downloads the fillings for the right month and year
+def upandgetem(month1,year1,month2 = 0,year2 = 0,scrap = 0 ):
+    # Updates tickers, list of companies and then downloads the fillings for the right month and year
+    # scrap can be changed to indicate you want to update ticker list, this will slow the process but get the latest tickers
+    # 
     #e.g.
-    #month='06'  # 03 06 09 12
-    #year='2019' # any
+    #month1='06'  # 03 06 09 12
+    #year1='2019' # any
+
+    #Optional month2 and year2
+    #if used month1 and month2 is the starting date, and month2 year 2 is the last date to retrieve
     wd=os.getcwd()   
 
-    Update_Data(month,year)
-    file_name='registered_stocks_TICKER'+month+'-'+year+'.csv'
-    datafold='/Data/Chile/'
+    if scrap != 0 :
+        Update_Data(month1,year1)
+    if month1 in months and year1 in years: # check if valid dates
+        if month2 in months and year2 in years:
+            for i in range(int(year1),int(year2)+1):
+                year=str(int(year1)+i)
+                for month in months:
+                    if (year!=year1 or int(month1)>=int(month)) and (year!=year2 or int(month2)<=int(month)):
+                        file_name='registered_stocks_TICKER'+month+'-'+year+'.csv'
+                        datafold='/Data/Chile/'
 
-    df=CL.read_data(file_name,datafold)
-    get_fillings(month,year,df,datafold,wd)
+                        df=CL.read_data(file_name,datafold)
+                        get_fillings(month,year,df,datafold,wd)
+        elif month2 ==0 and year2==0 :
+            file_name='registered_stocks_TICKER'+month1+'-'+year1+'.csv'
+            datafold='/Data/Chile/'
+            df=CL.read_data(file_name,datafold)
+            get_fillings(month1,year1,df,datafold,wd)
+        else:
+           print('Invalid Date 2') 
+    else:
+        print('Invalid Date 1')
+        
 
 def read_spec_xblr(param, param2,atparam2, folder):
     # If returns -1 it means not found
@@ -201,22 +237,22 @@ def read_xblr(folder,fin_dat_list):
             fin_dat=['', 0.0, 0, 0]
             for i in range (0,len(fin_dat_list)):
                 fin_dat=['', 0.0, 0, 0]
-                found = 0 
+                found = 0 # Some very funny guys at some companies think it makes sense to use dates for reference numbers in standarized fillings
+                                #So I'm hardcoding tags, which is horrible
                 for tag in tag_list:
-                    if fin_dat_list[i][1] == tag.name and (tag['contextref']=='TrimestreActual' or tag['contextref']=='p6' or tag['contextref']=='id113'):
+                    if fin_dat_list[i][1] == tag.name and (tag['contextref'] in present_trimester_tags):
                         #print('Revenue' + ' '+ tag.text + ' ' + tag['unitref'] )
-                        fin_dat[1] = float(tag.text)
-                        if (tag['unitref']=='CLP'):
+                        fin_dat[1] = float(tag.text)   
+                        if (tag['unitref'] in CLP_currency_tags):
                             fin_dat[3] = 0
                         else:
                             fin_dat[3] = 1
                         found = 1
-                if found == 0: # Some very funny guys at some companies think it makes sense to use dates for reference numbers in standarized fillings
-                                #So I'm hardcoding dates, which is horrible
+                if found == 0:
                     for tag in tag_list:
-                        if fin_dat_list[i][1] == tag.name and (tag['contextref']=='CierreTrimestreActual' or tag['contextref']=='p1_Instant'):
+                        if fin_dat_list[i][1] == tag.name and (tag['contextref'] in weirder_tags):
                             #print('Revenue' + ' '+ tag.text + ' ' + tag['unitref'] )
-                            if (tag['unitref']=='CLP'):
+                            if (tag['unitref'] in CLP_currency_tags):
                                 fin_dat[3] = 0
                             else:
                                 fin_dat[3] = 1
@@ -224,19 +260,9 @@ def read_xblr(folder,fin_dat_list):
                             found = 1
                 if found == 0:
                     for tag in tag_list:
-                        if fin_dat_list[i][1] == tag.name and (tag['contextref']=='ctx_instant_Fecha_20190331' or tag['contextref']=='ctx_instant_Fecha_20190630' or tag['contextref']=='ctx_instant_Fecha_20190930' or tag['contextref']=='ctx_instant_Fecha_20191231'):
+                        if fin_dat_list[i][1] == tag.name and (tag['contextref'] in cumulative_tags):
                             #print('Revenue' + ' '+ tag.text + ' ' + tag['unitref'] )
-                            if (tag['unitref']=='CLP'):
-                                fin_dat[3] = 0
-                            else:
-                                fin_dat[3] = 1
-                            fin_dat[1] = float(tag.text)
-                            found = 1
-                if found == 0:
-                    for tag in tag_list:
-                        if fin_dat_list[i][1] == tag.name and (tag['contextref']=='TrimestreAcumuladoActual' or tag['contextref']=='p1_Duration' or tag['contextref']=='id11792' or tag['contextref']=='AcumuladoAnoActual'):
-                            #print('Revenue' + ' '+ tag.text + ' ' + tag['unitref'] )
-                            if (tag['unitref']=='CLP'):
+                            if (tag['unitref'] in CLP_currency_tags):
                                 fin_dat[3] = 0
                             else:
                                 fin_dat[3] = 1
@@ -351,10 +377,20 @@ def all_companies(lista,folder,month,year):
     all_stocks_all_dates = []
     path=r""+folder
     subfolders = [f.path for f in os.scandir(path) if f.is_dir()]
-    subfolders2 = [i.replace(folder,'') for i in subfolders] #To compare names easier for selecting right folders
+    subfolders2 = [i.replace(folder,'') for i in subfolders] #To compare names, easier for selecting right folders
     subfolders = [subfolders[i] for i in range(0,len(subfolders)) if len(subfolders2[i])==7] # We select only folders with 7 letters (nothing happens if wrong folder so it is a soft condition)
-    subfolders=[subfolders[i] for i in range(0,len(subfolders)) if (int(subfolders2[i][3:7])>int(year) or (int(subfolders2[i][0:2])>=int(month) and subfolders2[i][3:7] == year))] # We select desired date 
-    subfolders2 = [int(subfolders2[i][3:7])*100+int(subfolders2[i][0:2]) for i in range(0,len(subfolders))] # Convert date to number
+    print('Found these folders:')
+    print(*subfolders2, sep = "\n")
+    temp=[]   #Aux for selected subfolders
+    temp2=[]  #Aux for dates of selected subfolders
+    for i in range(0,len(subfolders)):
+        if (int(subfolders2[i][3:7])>int(year) or (int(subfolders2[i][0:2])>=int(month) and subfolders2[i][3:7] == year)): # We select desired dates
+            temp.append(subfolders[i])
+            temp2.append(int(subfolders2[i][3:7])*100+int(subfolders2[i][0:2]))
+    subfolders=temp
+    subfolders2=temp2
+    print('Selected Dates:')
+    print(*subfolders2, sep = "\n")
     subfolders= tuple(zip(subfolders, subfolders2)) # Convert to tuple to sue numbers
     #subfolders=sorted(subfolders,key = lambda x: x[1]) #Sort, not used anymore
     for i in range(0,len(subfolders)): #Now we go into each selected folder searching for folders with stock data
@@ -368,7 +404,7 @@ def all_companies(lista,folder,month,year):
             listafinal=read_xblr(r""+stockfolders[j]+'/',lista)
             ticker=stockfolders[j].replace(subfolders[i][0],'')
             ticker=ticker[1:-8]
-            print('\n ' + ticker + ' Found for date: ' + str(subfolders[i][1]) )
+            print('\n ' + ticker + ' Found for date: ' + str(subfolders[i][1])[0:4] + ' / ' + str(subfolders[i][1])[4:6])
             listafinal['Date']=subfolders[i][1]
             listafinal['TICKER']=ticker
             if (j==0):
@@ -389,15 +425,15 @@ def all_companies(lista,folder,month,year):
 
 
 
-
-upandgetem('03','2019')
-upandgetem('09','2019')
-upandgetem('12','2019')
-upandgetem('12','2018')
-upandgetem('09','2018')
-#wd=os.getcwd()   
-#datafold='/Data/Chile/'
-#all_companies(lista,wd+datafold,'06','2019')
+#upandgetem('06','2018',scrap=1)
+#upandgetem('03','2019')
+#upandgetem('09','2019')
+#upandgetem('12','2019')
+#upandgetem('12','2018')
+#upandgetem('09','2018')
+wd=os.getcwd()   
+datafold='/Data/Chile/'
+all_companies(lista,wd+datafold,'03','2018')
 #listafinal=read_xblr(wd+datafold+'06-2019/LASCONDES_06-2019/',lista)
 #res=test_xblr('ifrs-full:profitlossfromcontinuingoperations','_ACT','contextref',wd+datafold+'06-2019/FALABELLA_06-2019/')
 #print(res)

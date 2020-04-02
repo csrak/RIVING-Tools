@@ -1,4 +1,5 @@
 import requests
+import time
 import lxml.html as lh
 import pandas as pd
 import os
@@ -13,6 +14,20 @@ from zipfile import ZipFile
 ###### 
 #    Functions for scraping data, general functions and some hard-code for specific scraping is found here
 #       Specifically for importing data from chilean stocks, into csv file, mostly into ~/data/chile/ folder
+
+
+def download_wait(zipfile,folder): #Taken from stack overflow and edited slightly
+    seconds = 0
+    dl_wait = True
+    while dl_wait or seconds < 10:
+        time.sleep(1)
+        dl_wait = True
+        print('zip = '+ zipfile)
+        for fname in os.listdir(folder):
+            if fname == zipfile:
+                dl_wait = False
+        seconds += 1
+    return seconds
 
 def getIndexes(dfObj, value):
     #''' Get index positions of value in dataframe i.e. dfObj.'''
@@ -199,6 +214,7 @@ def scrap_fillings(urls,filenames):
                 datafold='/Data/Chile/'
                 open(wd+datafold+filenames[i], 'wb').write(myfile.content)
                 temp=wd+datafold+filenames[i]
+                #download_wait(temp,wd+datafold)
                 if (temp!=temp.replace('.zip', '')):
                     temp=temp.replace('.zip', '')
                     if not os.path.exists(temp):
@@ -206,6 +222,7 @@ def scrap_fillings(urls,filenames):
                     with ZipFile(wd+datafold+filenames[i], 'r') as zipObj:
                 # Extract all the contents of zip file in different directory
                         zipObj.extractall(temp)
+                print('Downloading' + temp + '...\n')
 #########################################################
 #########################################################
 #########################################################
@@ -289,8 +306,11 @@ def get_ruts(df):
     #datafold='/Data/Chile/'
     #df = df.astype(str)
     #We take out the verifier code of each rut since it is not used
-    for i in range (0,df.shape[0]):
-        df.loc[i, 'Rut']=(df.loc[i, 'Rut'])[:-2]    
+    if not isinstance(df, int):
+        for i in range (0,df.shape[0]):
+            df.loc[i, 'Rut']=(df.loc[i, 'Rut'])[:-2]
+    else:
+        raise SystemExit('\nPlease Update setting "scrap=1" argument in "upandgetem" function ')    
     return df
 
 #########################################################
