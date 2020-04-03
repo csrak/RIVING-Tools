@@ -16,18 +16,7 @@ from zipfile import ZipFile
 #       Specifically for importing data from chilean stocks, into csv file, mostly into ~/data/chile/ folder
 
 
-def download_wait(zipfile,folder): #Taken from stack overflow and edited slightly
-    seconds = 0
-    dl_wait = True
-    while dl_wait or seconds < 10:
-        time.sleep(1)
-        dl_wait = True
-        print('zip = '+ zipfile)
-        for fname in os.listdir(folder):
-            if fname == zipfile:
-                dl_wait = False
-        seconds += 1
-    return seconds
+
 
 def getIndexes(dfObj, value):
     #''' Get index positions of value in dataframe i.e. dfObj.'''
