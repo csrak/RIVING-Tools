@@ -443,7 +443,7 @@ def all_companies(lista,folder,month,year):
 #upandgetem('12','2019')
 #upandgetem('12','2018')
 #upandgetem('09','2018')
-upandgetem('03','2020')
+#upandgetem('03','2020')
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2018')
