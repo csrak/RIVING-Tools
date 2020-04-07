@@ -52,6 +52,17 @@ lista=[['Revenue','ifrs-full:revenue'],
 ['Net Financing Cashflows','ifrs-full:CashFlowsFromUsedInFinancingActivities'],
 ['Bank: Non-Banking investing cashflow','cl-hb:SubtotalFlujosEfectivoNetosProcedentesUtilizadosActividadesInversionNegociosNoBancarios'],
 ['Bank: Banking investing cashflow','cl-hb:SubtotalFlujosEfectivoNetosProcedentesUtilizadosActividadesInversionServiciosBancarios'],
+#Secondary Items
+['Payment for supplies','ifrs-full:PaymentsToSuppliersForGoodsAndServices'],
+['Payment for employees','ifrs-full:PaymentsToAndOnBehalfOfEmployees'],
+['Property sales (operating)','ifrs-full:ProceedsFromSalesOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities'],
+['Dividends Paid','ifrs-full:DividendsPaidClassifiedAsFinancingActivities'],
+['Forex','ifrs-full:EffectOfExchangeRateChangesOnCashAndCashEquivalents'],
+['Trade receivables','ifrs-full:CurrentTradeReceivables'],
+['Prepayments','ifrs-full:CurrentPrepayments'],
+['Cash on hands','ifrs-full:CashOnHands'],
+['Cash on banks','ifrs-full:BalancesWithBanks'],
+['Cash short investment','ifrs-full:ShorttermInvestmentsClassifiedAsCashEquivalents']
 ]
 ##
 ##
@@ -136,17 +147,24 @@ def read_pdf_fil(file_name,datafold):
     #print(page.extractText())
     for i in range (0,filling.numPages):
         page = filling.getPage(i)
-        if 'PASIVOS Y PATRIMONIO NETO' in page.extractText():
+        temp=page.extractText()
+        if 'PASIVOS Y PATRIMONIO NETO' in temp or 'PATRIMONIO Y PASIVOS' in temp:
             table = tabula.read_pdf(datafold+file_name,pages=i)
             print(table)
             ix=CL.getIndexes(table,'Pagos Anticipados')
-            
+            ix=CL.getIndexes(table,'Gastos Anticipados')
+            print(ix)
+        if 'ACTIVOS' in temp:
+            table = tabula.read_pdf(datafold+file_name,pages=i)
+            print(table)
+            ix=CL.getIndexes(table,'Pagos Anticipados')
+            ix=CL.getIndexes(table,'Gastos Anticipados')
             print(ix)
     #print(df.loc[3,'Pagos Anticipados'])
     
 def upandgetem(month1,year1,month2 = 0,year2 = 0,scrap = 0 ):
     # Updates tickers, list of companies and then downloads the fillings for the right month and year
-    # scrap can be changed to indicate you want to update ticker list, this will slow the process but get the latest tickers
+    # scrap can be changed to indicate you do not want to update ticker list, this will speed the process if you already have get the latest tickers
     # 
     #e.g.
     #month1='06'  # 03 06 09 12
@@ -156,7 +174,7 @@ def upandgetem(month1,year1,month2 = 0,year2 = 0,scrap = 0 ):
     #if used month1 and month2 is the starting date, and month2 year 2 is the last date to retrieve
     wd=os.getcwd()   
 
-    if scrap != 0 :
+    if scrap == 0 :
         Update_Data(month1,year1)
     if month1 in months and year1 in years: # check if valid dates
         if month2 in months and year2 in years:
@@ -419,24 +437,20 @@ def all_companies(lista,folder,month,year):
     print(all_stocks_all_dates)
     
 
-    
-
-
-
-
-
-
-
 #upandgetem('06','2018',scrap=1)
 #upandgetem('03','2019')
 #upandgetem('09','2019')
 #upandgetem('12','2019')
 #upandgetem('12','2018')
 #upandgetem('09','2018')
-wd=os.getcwd()   
-datafold='/Data/Chile/'
-all_companies(lista,wd+datafold,'03','2018')
+upandgetem('03','2020')
+#wd=os.getcwd()   
+#datafold='/Data/Chile/'
+#all_companies(lista,wd+datafold,'03','2018')
 #listafinal=read_xblr(wd+datafold+'06-2019/LASCONDES_06-2019/',lista)
 #res=test_xblr('ifrs-full:profitlossfromcontinuingoperations','_ACT','contextref',wd+datafold+'06-2019/FALABELLA_06-2019/')
 #print(res)
 #print(listafinal)
+
+
+#read_pdf_fil('SECURITY_12-2019.pdf',wd+datafold+'12-2019NOTYET/')
