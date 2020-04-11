@@ -6,6 +6,27 @@ import Requests_CL as rcl
 
 #############
 
+#Convert all USD to CLP and clean the table. Need current USD convertion
+def all_CLP(df):
+	n=len(df)
+	convertion_rate=800
+	for i in range(len(df)//int(len(df.columns))):
+		for j in range(len(df.columns)-2):
+			if float(df.iloc[3*i+2,j])==1.0:
+				df.iloc[3*i,j]=str(float(df.iloc[3*i,j])*convertion_rate)
+			elif float(df.iloc[3*i+2,j])==0.0:
+				continue
+			else:
+				print('Not recognizible')
+				
+	for i in range(n//3):
+		df.drop([n-3*i-1],inplace=True)
+		
+	return df
+
+#Coment ####################################
+#<><><><><><><><><><><><><><><><><><>#
+
 
 
 #############
