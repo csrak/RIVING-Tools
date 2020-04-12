@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 import live_data as ld
 import Requests_CL as rcl
-
+from matplotlib import pyplot as plt
 #############
 
 USDtoCLP=800
@@ -32,6 +32,8 @@ def all_CLP(df):
 
 #Coment ####################################
 #<><><><><><><><><><><><><><><><><><>#
+
+
 
 def search_date(month,year,df,ticker):
     date=int(month)+int(year)*100
@@ -88,12 +90,25 @@ def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the
 				check=1
 		if check==0:
 				datas.append(np.nan)
-	#print(datas)
-	#print(datelist)
+	print(datas)
+	n=len(datas)
+	temp=[]
+	for i in range(n//2):
+		if i==0:
+			temp.append(float(datas[2*i]))
+		elif float(datas[2*i+1])==1.0 and datelist[i]//100==datelist[i-1]//100: #Check if accumulated or only this trimester, then check if same year
+			temp.append(float(datas[2*i])-float(datas[2*i-2]))
+		else:
+			temp.append(float(datas[2*i]))
+	datas=[i/1000 for i in temp]
+	print(datas)
+	print(datelist)
 	return datas,datelist
 		
-def plot_data_time():
-	#nothing right now
+def plot_data_time(data):
+	plt.plot(data)
+	plt.show()
+
 	return 0
 
 
@@ -107,7 +122,8 @@ file_name='Database_Chile_Since_03-2018.csv'
 
 df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
 df = all_CLP(df)
-list_by_date('WATTS','revenue',df)
+datas,datelist=list_by_date('WATTS','revenue',df)
+plot_data_time(datas)
 
 
 #search_date('06','2019',df,'WATTS')
