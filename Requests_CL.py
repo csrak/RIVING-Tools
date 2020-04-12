@@ -337,7 +337,7 @@ def read_xblr(folder,fin_dat_list):
 #file_name='CUPRUM'+'_'+month+'-'+year+'.pdf'
 #datafold=wd+'/Data/Chile/'+month+'-'+year+'/'
 #read_pdf_fil(file_name,datafold)
-
+####
 def test_xblr(param, param2,atparam2, folder):
     # function for testing changes in xblr parsing functions
     result=0.0
