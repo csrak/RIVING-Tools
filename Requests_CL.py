@@ -26,8 +26,8 @@ years=[str(i) for i in years]
 years=set(years) #Set for faster search
 
 present_trimester_tags={'TrimestreActual','p6','id113','Actual','ID_P3','CierreTrimestreActual','p1_Instant'}#,'id349','id3810'} #Only present trimester
-weirder_tags= {'ctx_instant_Fecha_20190331','ctx_instant_Fecha_20190630','ctx_instant_Fecha_20190930','ctx_instant_Fecha_20191231','ID_P1'} # Present trimester, but may be wrong
-cumulative_tags={'TrimestreAcumuladoActual','p1_Duration','id11792','AcumuladoAnoActual','id11','id15027'} #YearToDate
+#weirder_tags= {'ctx_instant_Fecha_20190331','ctx_instant_Fecha_20190630','ctx_instant_Fecha_20190930','ctx_instant_Fecha_20191231','ID_P1'} # Present trimester, but may be wrong
+cumulative_tags={'TrimestreAcumuladoActual','p1_Duration','id11792','AcumuladoAnoActual'}#,'id11','id15027'} #YearToDate
 CLP_currency_tags={'CLP','id14'} #Tags to identify chilean currency
 
 #Numbers
@@ -335,17 +335,17 @@ def read_xblr(folder,fin_dat_list,month,year):
                             fin_dat[3] = 1
                         found = 1
                         fin_dat[2]=0
-                if found == 0:
-                    for tag in tag_list:
-                        if fin_dat_list[i][1] == tag.name and (tag['contextref'] in weirder_tags):
-                            #print('Revenue' + ' '+ tag.text + ' ' + tag['unitref'] )
-                            if (tag['unitref'] in CLP_currency_tags):
-                                fin_dat[3] = 0
-                            else:
-                                fin_dat[3] = 1
-                            fin_dat[1] = float(tag.text)
-                            found = 1
-                            fin_dat[2]=0
+                #if found == 0:
+                #    for tag in tag_list:
+                #        if fin_dat_list[i][1] == tag.name and (tag['contextref'] in weirder_tags):
+                #            #print('Revenue' + ' '+ tag.text + ' ' + tag['unitref'] )
+                #            if (tag['unitref'] in CLP_currency_tags):
+                #                fin_dat[3] = 0
+                #            else:
+                #                fin_dat[3] = 1
+                #            fin_dat[1] = float(tag.text)
+                #            found = 1
+                #            fin_dat[2]=0
                 if found == 0:
                     for tag in tag_list:
                         if fin_dat_list[i][1] == tag.name and (tag['contextref'] in cumulative_tags):
