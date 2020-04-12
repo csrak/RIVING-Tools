@@ -97,7 +97,33 @@ def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the
 		if i==0:
 			temp.append(float(datas[2*i]))
 		elif float(datas[2*i+1])==1.0 and datelist[i]//100==datelist[i-1]//100: #Check if accumulated or only this trimester, then check if same year
-			temp.append(float(datas[2*i])-float(datas[2*i-2]))
+			if float(datas[2*i-1])==0.0: #This means that we cannot substract directly, since previous point of data is 
+				print('Yes')
+	                                     # for one trimester, while now is cumulative for full year
+				j=i #we set aux variable j to move through array
+				value=float(datas[2*i]) #Initial value (Full year accumulated)				
+				while True: #We loop through in reverse through the array, getting out when needed
+					print(value)
+					j=j-1 #Counter		
+					print(datas[2*j])								
+					value-=float(datas[2*j]) #We substract to ce accumulated value, the previous data point
+					if float(datas[2*j+1])==1.0 or datelist[j-1]//100!=datelist[j]//100: 
+						#If we have that we are now in a point which includes previous trimesters we can get out
+						# Also if the next data point we would substract corresponds to another year
+						# meaning we already substracted full year data 
+						if j-1<0 and datelist[j]-100*(datelist[j]//100)!=3:
+							return "Cumulative and Missing data at",datelist[j]
+						break
+					elif float(datas[2*j+1])==2.0:
+						#If we have cumulative data but a point is missing we get out informing this needs to be manually adressed
+						return "Cumulative and Missing data at",datelist[j]
+				#We append the value of the total substraction
+				temp.append(value)					
+			elif float(datas[2*i-1])==2.0:				
+				#If we have cumulative data but a point is missing we get out informing this needs to be manually adressed
+				return "Cumulative and Missing data at",datelist[j]
+			else:
+				temp.append(float(datas[2*i])-float(datas[2*i-2]))
 		else:
 			temp.append(float(datas[2*i]))
 	datas=[i/1000 for i in temp]
@@ -117,13 +143,13 @@ def plot_data_time(data):
 #Testing how pandas and the table works
 
 #start='2018/03'
-datafold='/Data/Chile/'
-file_name='Database_Chile_Since_03-2018.csv'
+#datafold='/Data/Chile/'
+#file_name='Database_Chile_Since_03-2018.csv'
 
-df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
-df = all_CLP(df)
-datas,datelist=list_by_date('WATTS','revenue',df)
-plot_data_time(datas)
+#df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
+#df = all_CLP(df)
+#datas,datelist=list_by_date('WATTS','revenue',df)
+#plot_data_time(datas)
 
 
 #search_date('06','2019',df,'WATTS')

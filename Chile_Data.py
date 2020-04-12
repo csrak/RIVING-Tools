@@ -299,7 +299,7 @@ def get_ruts(df):
         for i in range (0,df.shape[0]):
             df.loc[i, 'Rut']=(df.loc[i, 'Rut'])[:-2]
     else:
-        raise SystemExit('\nPlease Update setting "scrap=1" argument in "upandgetem" function ')    
+        raise SystemExit('\nPlease Update not setting "Scrap" argument in "upandgetem" function ')    
     return df
 
 #########################################################

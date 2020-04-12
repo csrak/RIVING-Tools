@@ -3,6 +3,7 @@ import lxml.html as lh
 import pandas as pd
 import os
 import glob
+import numpy as np
 from bs4 import BeautifulSoup
 from pathlib import Path
 from difflib import SequenceMatcher
@@ -24,7 +25,7 @@ years=range(2000,2100) # years are hardcoded for no good reason, just because
 years=[str(i) for i in years]
 years=set(years) #Set for faster search
 
-present_trimester_tags={'TrimestreActual','p6','id113','Actual','ID_P3','CierreTrimestreActual','p1_Instant','id349'} #Only present trimester
+present_trimester_tags={'TrimestreActual','p6','id113','Actual','ID_P3','CierreTrimestreActual','p1_Instant'}#,'id349','id3810'} #Only present trimester
 weirder_tags= {'ctx_instant_Fecha_20190331','ctx_instant_Fecha_20190630','ctx_instant_Fecha_20190930','ctx_instant_Fecha_20191231','ID_P1'} # Present trimester, but may be wrong
 cumulative_tags={'TrimestreAcumuladoActual','p1_Duration','id11792','AcumuladoAnoActual','id11','id15027'} #YearToDate
 CLP_currency_tags={'CLP','id14'} #Tags to identify chilean currency
@@ -240,8 +241,52 @@ def read_spec_xblr(param, param2,atparam2, folder):
                         result = float(tag.text)
     return result
 
+def get_unknown_reference(soup,param,month,year):
+    #Receives the name of a parameter from the list of parameters, a mont, a year, and a parsed xblr file
+    #It searches for the data in the file trying to search trimestral data first
+    #If trimestral data not found it returns YTD data
+    #os.chdir(folder)
+    acum=2  #2 means not found (default) 1 means YTD data found, 0 means trimestral data found
+    end_value=np.nan #Value of data, nan if not found
+    clp=0 #Currency, CLP is 0, USD is 1, no other currencies implemented yet
+    start_month=str(int(month)-2) #For searching the right period calculates the start of the trimester (If trimester  is different it won't find it)
+    if int(start_month)<10:
+        start_month='0'+start_month #Strings usually include the 0
+    contexts=soup.find_all('xbrli:context')
+    tag_list = soup.find_all(param)
+    #ref_list=[tag['contextref'] for tag in tag_list]
+    #print(tag_list)
+    for datafromperiods in tag_list: #Loop through the different periods for which the data exists
+        for context in contexts: #Loop through different defined periods
+            if datafromperiods['contextref']==context['id']: #Identifies the correspondent period from the defined ones
+                #print(((context.find('xbrli:period')).find('xbrli:enddate')).contents)
+                if ((context.find('xbrli:period')).find('xbrli:instant')) != None: #If instant tag exists means there is no period (I.E.For current assets)
+                    if (datafromperiods['unitref'] in CLP_currency_tags):  # Searches for currency code in list
+                            clp = 0
+                    else:
+                            clp = 1
+                        #print('Found Trimestral')
+                    return datafromperiods.text,1.0,clp  #If instant means there are no existent (useful) periods so we return this data
+                if year+'-'+month in ((context.find('xbrli:period')).find('xbrli:enddate')).contents[0]:                            
+                    if year+'-'+start_month in ((context.find('xbrli:period')).find('xbrli:startdate')).contents[0]:
+                        if (datafromperiods['unitref'] in CLP_currency_tags):# Searches for currency code in list
+                            clp = 0
+                        else:
+                            clp = 1
+                        #print('Found Trimestral')
+                        return datafromperiods.text,0,clp #If trimestral data found, search stops and we can go back
+                    elif year+'-01' in ((context.find('xbrli:period')).find('xbrli:startdate')).contents[0]:
+                        if (datafromperiods['unitref'] in CLP_currency_tags):# Searches for currency code in list
+                            clp = 0
+                        else:
+                            clp = 1               
+                        acum=1 #If we find YTD data we save it, but keep searching for the trimestral data
+                        end_value=datafromperiods.text #If we find YTD data we save it, but keep searching for the trimestral data
+                        #print('Found Accumulated')
+    return end_value, acum,clp
 
-def read_xblr(folder,fin_dat_list):
+    
+def read_xblr(folder,fin_dat_list,month,year):
     
     for i in range(0,len(fin_dat_list)):
         for j in range(0,len(fin_dat_list[i])):
@@ -265,14 +310,12 @@ def read_xblr(folder,fin_dat_list):
     final_list=[]
 
     os.chdir(folder)
-    for file in glob.glob("*.xbrl"):
+    for file in glob.glob("*.xbrl"): #usually there is only one in the folder, but didn't want to code a name generator so we do it for "all" which is more like "any"
         with open(file, "r", errors='ignore') as f:
             filling = f.read()
             
             soup = BeautifulSoup(filling, 'lxml')
             tag_list = soup.find_all()
-
-            
             #Attributes are in lowercase, which is why this may either be done manually
             # or it may be done for all attributes 
 
@@ -314,8 +357,8 @@ def read_xblr(folder,fin_dat_list):
                             fin_dat[1] = float(tag.text)                            
                             found = 1
                             fin_dat[2]=1
-                if found == 0:
-                    fin_dat[2]=2
+                if found == 0:#last resort
+                    fin_dat[1],fin_dat[2],fin_dat[3]=get_unknown_reference(soup,fin_dat_list[i][1],month,year) #Should always find the right one, but it is also slower
                 fin_dat[0]=fin_dat_list[i][0]
                 final_list.append(fin_dat)
                 #print('\n' + fin_dat[0] +' is '+ 'CLP')
@@ -422,7 +465,7 @@ def all_companies(lista,folder,month,year):
         stockfolders = [f.path for f in os.scandir(path) if f.is_dir()]
         for j in range(0,len(stockfolders)): #Now for each folder with stock data we get requested data
             #print(stockfolders[j])
-            listafinal=read_xblr(r""+stockfolders[j]+'/',lista)
+            listafinal=read_xblr(r""+stockfolders[j]+'/',lista,str(subfolders[i][1])[4:6],str(subfolders[i][1])[0:4]) #Main function, we seach for all the aprametersfor the database in the folder
             ticker=stockfolders[j].replace(subfolders[i][0],'')
             ticker=ticker[1:-8]
             print('\n ' + ticker + ' Found for date: ' + str(subfolders[i][1])[0:4] + ' / ' + str(subfolders[i][1])[4:6])
@@ -437,8 +480,15 @@ def all_companies(lista,folder,month,year):
     all_stocks_all_dates.to_csv(folder+file_name, index = None, header=True)
     print(all_stocks_all_dates)
     
-
-#upandgetem('06','2018',scrap=1)
+#upandgetem('03','2016')
+#upandgetem('06','2016')
+#upandgetem('09','2016')
+#upandgetem('12','2016')
+#upandgetem('03','2017')
+#upandgetem('06','2017')
+#upandgetem('09','2017')
+#upandgetem('12','2017')
+#upandgetem('03','2018')
 #upandgetem('03','2019')
 #upandgetem('09','2019')
 #upandgetem('12','2019')
@@ -447,7 +497,7 @@ def all_companies(lista,folder,month,year):
 #upandgetem('03','2020')
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
-#all_companies(lista,wd+datafold,'03','2018')
+#all_companies(lista,wd+datafold,'03','2016')
 #listafinal=read_xblr(wd+datafold+'06-2019/LASCONDES_06-2019/',lista)
 #res=test_xblr('ifrs-full:profitlossfromcontinuingoperations','_ACT','contextref',wd+datafold+'06-2019/FALABELLA_06-2019/')
 #print(res)
