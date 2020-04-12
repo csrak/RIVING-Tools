@@ -291,6 +291,7 @@ def read_xblr(folder,fin_dat_list):
                         else:
                             fin_dat[3] = 1
                         found = 1
+                        fin_dat[2]=0
                 if found == 0:
                     for tag in tag_list:
                         if fin_dat_list[i][1] == tag.name and (tag['contextref'] in weirder_tags):
@@ -301,6 +302,7 @@ def read_xblr(folder,fin_dat_list):
                                 fin_dat[3] = 1
                             fin_dat[1] = float(tag.text)
                             found = 1
+                            fin_dat[2]=1
                 if found == 0:
                     for tag in tag_list:
                         if fin_dat_list[i][1] == tag.name and (tag['contextref'] in cumulative_tags):
@@ -309,11 +311,10 @@ def read_xblr(folder,fin_dat_list):
                                 fin_dat[3] = 0
                             else:
                                 fin_dat[3] = 1
-                            fin_dat[1] = float(tag.text)
+                            fin_dat[1] = float(tag.text)                            
                             found = 1
-                if found == 1:
-                    fin_dat[2]=1
-                else:
+                            fin_dat[2]=1
+                if found == 0:
                     fin_dat[2]=2
                 fin_dat[0]=fin_dat_list[i][0]
                 final_list.append(fin_dat)
