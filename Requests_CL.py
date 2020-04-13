@@ -65,11 +65,40 @@ lista=[['Revenue','ifrs-full:revenue'],
 ['Cash on banks','ifrs-full:BalancesWithBanks'],
 ['Cash short investment','ifrs-full:ShorttermInvestmentsClassifiedAsCashEquivalents']
 ]
+
+
+lista_instant=[['Cash','ifrs-full:CashAndCashEquivalents'],
+['Current Assets','ifrs-full:CurrentAssets'],
+['Non-Current Assets','ifrs-full:NoncurrentAssets'],
+['Goodwill','ifrs-full:Goodwill'],
+['Intangible Assets','ifrs-full:IntangibleAssetsOtherThanGoodwill'],
+['Assets','ifrs-full:Assets'], #Banks may have Assets > Current + Noncurrent, since banking assets are separated
+['Current Liabilities','ifrs-full:CurrentLiabilities'],
+['Equity','ifrs-full:EquityAttributableToOwnersOfParent'],
+['Shares','ifrs-full:NumberOfSharesOutstanding'],
+['Inventories','ifrs-full:Inventories'],
+['Shares Authorized','ifrs-full:NumberOfSharesAuthorised'],
+['Cash on hands','ifrs-full:CashOnHands'],
+['Cash on banks','ifrs-full:BalancesWithBanks'],
+['Cash short investment','ifrs-full:ShorttermInvestmentsClassifiedAsCashEquivalents'],
+['Trade receivables','ifrs-full:CurrentTradeReceivables']
+]
 ##
 ##
 # Format_Data -> Obtains and formats data already downloaded from updated databases and creates joint database
 #  ###### USE ONLY IF UPDATE DATA THROWS NO ERROR  ##############
 ####################################################################
+lista_instant=[a[0].lower() for a in lista_instant]
+
+def check_parameter(param):
+    if param.lower() not in [a[0].lower() for a in lista]:
+        print('Current available parameters:\n')
+        print(*lista, sep='\n')
+        raise SystemExit('Please select a parameter from the available database') 
+    else:
+        return param.lower()
+
+
 def Format_Data(month, year):
 
     #Reads files downloaded from databases
@@ -253,36 +282,50 @@ def get_unknown_reference(soup,param,month,year):
     if int(start_month)<10:
         start_month='0'+start_month #Strings usually include the 0
     contexts=soup.find_all('xbrli:context')
+    per='period'
+    endd='enddate'
+    stard='startdate'
+    inst='instant'
+    scen='scenario'
+    if contexts:
+        per='xbrli:'+per
+        endd='xbrli:'+endd
+        stard='xbrli:'+stard
+        inst='xbrli:'+inst
+        scen='xbrli:'+scen
+    else:
+        contexts=soup.find_all('context')
     tag_list = soup.find_all(param)
     #ref_list=[tag['contextref'] for tag in tag_list]
     #print(tag_list)
     for datafromperiods in tag_list: #Loop through the different periods for which the data exists
         for context in contexts: #Loop through different defined periods
-            if datafromperiods['contextref']==context['id']: #Identifies the correspondent period from the defined ones
-                #print(((context.find('xbrli:period')).find('xbrli:enddate')).contents)
-                if ((context.find('xbrli:period')).find('xbrli:instant')) != None: #If instant tag exists means there is no period (I.E.For current assets)
-                    if (datafromperiods['unitref'] in CLP_currency_tags):  # Searches for currency code in list
-                            clp = 0
-                    else:
-                            clp = 1
-                        #print('Found Trimestral')
-                    return datafromperiods.text,1.0,clp  #If instant means there are no existent (useful) periods so we return this data
-                if year+'-'+month in ((context.find('xbrli:period')).find('xbrli:enddate')).contents[0]:                            
-                    if year+'-'+start_month in ((context.find('xbrli:period')).find('xbrli:startdate')).contents[0]:
-                        if (datafromperiods['unitref'] in CLP_currency_tags):# Searches for currency code in list
-                            clp = 0
+            if (context.find(scen)) == None:
+                if datafromperiods['contextref']==context['id']: #Identifies the correspondent period from the defined ones
+                    #print(((context.find('xbrli:period')).find('xbrli:enddate')).contents)
+                    if ((context.find(per)).find(inst)) != None: #If instant tag exists means there is no period (I.E.For current assets)
+                        if (datafromperiods['unitref'] in CLP_currency_tags):  # Searches for currency code in list
+                                clp = 0
                         else:
-                            clp = 1
-                        #print('Found Trimestral')
-                        return datafromperiods.text,0,clp #If trimestral data found, search stops and we can go back
-                    elif year+'-01' in ((context.find('xbrli:period')).find('xbrli:startdate')).contents[0]:
-                        if (datafromperiods['unitref'] in CLP_currency_tags):# Searches for currency code in list
-                            clp = 0
-                        else:
-                            clp = 1               
-                        acum=1 #If we find YTD data we save it, but keep searching for the trimestral data
-                        end_value=datafromperiods.text #If we find YTD data we save it, but keep searching for the trimestral data
-                        #print('Found Accumulated')
+                                clp = 1
+                            #print('Found Trimestral')
+                        return datafromperiods.text,0.0,clp  #If instant means there are no existent (useful) periods so we return this data
+                    if year+'-'+month in ((context.find(per)).find(endd)).contents[0]:                            
+                        if year+'-'+start_month in ((context.find(per)).find(stard)).contents[0]:
+                            if (datafromperiods['unitref'] in CLP_currency_tags):# Searches for currency code in list
+                                clp = 0
+                            else:
+                                clp = 1
+                            #print('Found Trimestral')
+                            return datafromperiods.text,0,clp #If trimestral data found, search stops and we can go back
+                        elif year+'-01' in ((context.find(per)).find(stard)).contents[0]:
+                            if (datafromperiods['unitref'] in CLP_currency_tags):# Searches for currency code in list
+                                clp = 0
+                            else:
+                                clp = 1               
+                            acum=1 #If we find YTD data we save it, but keep searching for the trimestral data
+                            end_value=datafromperiods.text #If we find YTD data we save it, but keep searching for the trimestral data
+                            #print('Found Accumulated')
     return end_value, acum,clp
 
     
