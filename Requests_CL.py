@@ -565,9 +565,9 @@ def all_companies(lista,folder,month,year):
 #upandgetem('12','2018')
 #upandgetem('09','2018')
 #upandgetem('03','2020')
-#wd=os.getcwd()   
-#datafold='/Data/Chile/'
-#all_companies(lista,wd+datafold,'03','2016')
+wd=os.getcwd()   
+datafold='/Data/Chile/'
+all_companies(lista,wd+datafold,'03','2016')
 #listafinal=read_xblr(wd+datafold+'06-2019/LASCONDES_06-2019/',lista)
 #res=test_xblr('ifrs-full:profitlossfromcontinuingoperations','_ACT','contextref',wd+datafold+'06-2019/FALABELLA_06-2019/')
 #print(res)
