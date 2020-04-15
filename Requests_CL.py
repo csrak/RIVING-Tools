@@ -13,6 +13,8 @@ import PyPDF2
 import Chile_Data as CL
 import live_data as live
 from zipfile import ZipFile
+import fnmatch
+import time
 
 
 
@@ -342,7 +344,7 @@ def get_unknown_reference(soup,param,month,year):
 
     
 def read_xblr(folder,fin_dat_list,month,year):
-    
+    start_time=time.time()
     for i in range(0,len(fin_dat_list)):
         for j in range(0,len(fin_dat_list[i])):
             fin_dat_list[i][j]=fin_dat_list[i][j].lower()
@@ -364,8 +366,11 @@ def read_xblr(folder,fin_dat_list,month,year):
     #revenue=[0.0, 0, 0]
     final_list=[]
 
+    name="*.xbrl"
+    if len(fnmatch.filter(os.listdir(folder), '*.xbrl'))>1: #For now if they report consolidated and individual files we consider only the consoloidated, this may and should be changed in the future as an option
+        name="*_C.xbrl"    
     os.chdir(folder)
-    for file in glob.glob("*.xbrl"): #usually there is only one in the folder, but didn't want to code a name generator so we do it for "all" which is more like "any"
+    for file in glob.glob(name): #usually there is only one in the folder, but didn't want to code a name generator so we do it for "all" which is more like "any"
         with open(file, "r", errors='ignore') as f:
             filling = f.read()
             
@@ -427,6 +432,9 @@ def read_xblr(folder,fin_dat_list,month,year):
     final_list=temp_final_list
     column_names = final_list.pop(0)
     fin_df = pd.DataFrame(final_list, columns=column_names)
+    end = time.time()
+    print('Execution time = ')
+    print(end - start_time)
     return fin_df
 
 
@@ -511,6 +519,7 @@ def all_companies(lista,folder,month,year):
     print('Selected Dates:')
     print(*subfolders2, sep = "\n")
     subfolders= tuple(zip(subfolders, subfolders2)) # Convert to tuple to sue numbers
+    check=0
     #subfolders=sorted(subfolders,key = lambda x: x[1]) #Sort, not used anymore
     for i in range(0,len(subfolders)): #Now we go into each selected folder searching for folders with stock data
         #for s in stocks:
@@ -525,10 +534,16 @@ def all_companies(lista,folder,month,year):
             ticker=ticker[1:-8]
             print('\n ' + ticker + ' Found for date: ' + str(subfolders[i][1])[0:4] + ' / ' + str(subfolders[i][1])[4:6])
             listafinal['Date']=subfolders[i][1]
-            listafinal['TICKER']=ticker
+            listafinal['TICKER']=ticker            
             if (j==0):
+                print('initial lenght = '+ str(len(listafinal.columns)))
+                check=len(listafinal.columns)
+            if (len(listafinal.columns)!=check):
+                print('weird lenght = '+ str(len(listafinal.columns)))
+                print('\nNon Existing Company?')
                 print(listafinal)
-            all_stocks_all_dates.append(listafinal)
+            else:
+                all_stocks_all_dates.append(listafinal)
 
     all_stocks_all_dates = pd.concat(all_stocks_all_dates)
     file_name='Database_Chile_Since_'+month+'-'+year+'.csv'
