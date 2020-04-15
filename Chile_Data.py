@@ -8,7 +8,10 @@ from difflib import SequenceMatcher
 import re
 from bs4 import BeautifulSoup
 from zipfile import ZipFile
-
+from zipfile import BadZipfile
+import tabula #install tabula-py
+import PyPDF2
+import unidecode
 ###
 #####
 ###### 
@@ -52,7 +55,7 @@ def scrap_company_Links(companies_list,month, year):
             rut=companies_list.loc[i,'Rut']
             if 'href' in link.attrib and rut in link.attrib['href']:
                 out[i]=link.attrib['href']
-                out[i]='http://www.cmfchile.cl/institucional/mercados/'+ out[i]
+                out[i]='http://www.cmfchile.cl/institucional/mercados/'+ out[i]               
             
                 
     return out
@@ -208,10 +211,21 @@ def scrap_fillings(urls,filenames):
                     temp=temp.replace('.zip', '')
                     if not os.path.exists(temp):
                         os.mkdir(temp)
-                    with ZipFile(wd+datafold+filenames[i], 'r') as zipObj:
-                # Extract all the contents of zip file in different directory
-                        zipObj.extractall(temp)
-                print('Downloading' + temp + '...\n')
+                    print('Downloading ' + temp + '...\n')
+                    downloaded = 1
+                    while downloaded!=0:
+                        try:
+                            with ZipFile(wd+datafold+filenames[i], 'r') as zipObj:
+                        # Extract all the contents of zip file in different directory
+                                zipObj.extractall(temp)
+                                downloaded=0
+                        except BadZipfile:
+                            downloaded += 1
+                            print('Still downloading '+' (' +str(downloaded*5)+' seconds )' + temp + ' \n')
+                            time.sleep(5)
+                        if downloaded>12:
+                            print('error downloading ' + temp + 'Please download Manually before executing "allcompanies"')
+                            break
 #########################################################
 #########################################################
 #########################################################
@@ -279,9 +293,57 @@ def scrap_mw():
     wd=os.getcwd()
     #folder=Path(wd).parent
     #print(folder)
-    file_name='registered_stocks_mw.csv'
+    file_name='registered_stocks.csv'
     datafold=wd+'/Data/Chile/'
     df.to_csv(datafold+file_name, index = None, header=True)
+
+def scrap_offline():
+    wd=os.getcwd()
+    datafold='/Data/Chile/'
+    file_name='list_of_tickers.pdf'
+    filepdf = open(wd+datafold+file_name, 'rb')
+    # pdf reader object
+    filling = PyPDF2.PdfFileReader(filepdf)
+    # # number of pages in pdf
+    #print(filling)
+    # # a page object
+    table=[]
+    #print(page.extractText())
+    for i in range (0,filling.numPages):
+        page = filling.getPage(i)
+        temp=page.extractText()
+        #table = tabula.read_pdf(wd+datafold+file_name,pages=i)
+        table.append(temp.split('\n'))
+    #print(table)
+    filepdf.close()
+    tickers=['Ticker']
+    razon=['Name']
+    count=0
+    for pages in table:
+        #print(pages)
+        start=pages.index(str(1+count))
+        for j in range((len(pages)-start)//3):
+            tickers.append(pages[start+1+3*j])
+            razon.append(pages[start+2+3*j])
+            count=int(pages[start+3*j])
+    final_list=[tickers,razon]
+    temp_final_list=[]
+    for j in range(0,len(tickers)):
+        dim=[]
+        for i in range(0,len(final_list)):
+            dim.append(unidecode.unidecode(final_list[i][j]))
+        temp_final_list.append(dim)
+    final_list=temp_final_list
+    column_names = final_list.pop(0)
+    #print(column_names)
+    df = pd.DataFrame(final_list, columns=column_names)
+    wd=os.getcwd()
+    #folder=Path(wd).parent
+    #print(folder)
+    file_name='registered_stocks.csv'
+    datafold=wd+'/Data/Chile/'
+    df.to_csv(datafold+file_name, index = None, header=True)
+
 
 
 
@@ -337,18 +399,20 @@ def Tick2Rut(ruts,tickers):
             b=b.upper()
             a=a.upper()
             b=re.sub('Ñ','N',b)
+            a=re.sub('Ñ','N',a)
+            b=re.sub('Ñ','N',b)
             ### Fix Common errors
            
-            b=re.sub('S.A.','',b)
-            b=re.sub('ADMINISTRADORA GENERAL DE FONDOS','',b)
-            a=re.sub('S.A.','',a)
-            a=re.sub('ADMINISTRADORA GENERAL DE FONDOS','',a)
-            a=re.sub('A.F.P.','ADMINISTRADORA  DE FONDOS DE PENSIONES',a)
-            a=re.sub('FONDO DE INVERSION','',a)
+            #b=re.sub('S.A.','',b)
+            #b=re.sub('ADMINISTRADORA GENERAL DE FONDOS','',b)
+            #a=re.sub('S.A.','',a)
+            #a=re.sub('ADMINISTRADORA GENERAL DE FONDOS','',a)
+            #a=re.sub('A.F.P.','ADMINISTRADORA  DE FONDOS DE PENSIONES',a)
+            #a=re.sub('FONDO DE INVERSION','',a)
 
             ##Some abbreviations cause problems too, company specific hardcoding below
 
-            a=re.sub('ARBITRAGE','',a)
+            #a=re.sub('ARBITRAGE','',a)
 
             simil=SequenceMatcher(None, a, b).ratio() #We compare names
             #Most similar name stays
@@ -358,8 +422,9 @@ def Tick2Rut(ruts,tickers):
                 curr_simil=simil
                 #test_order[i]=b
                 #test_order2[i]=simil
-            if j==(range2-1) and curr_simil<0.715:
-                    rut_order[i]= 'ERROR HIGH CHECK MANUALLY= '+str(rut_order[i])    
+            #if j==(range2-1) and curr_simil<0.715:
+            #        rut_order[i]= 'ERROR HIGH CHECK MANUALLY= '+str(rut_order[i])    
+            #Not checking errors anymore since doesn't have any
             #print(a)
             #print(b)
             #print('Similitud=')
@@ -376,6 +441,7 @@ def Tick2Rut(ruts,tickers):
 
 
 #
+#scrap_offline()
 
 
 

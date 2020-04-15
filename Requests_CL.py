@@ -34,9 +34,14 @@ CLP_currency_tags={'CLP','id14'} #Tags to identify chilean currency
 lista=[['Revenue','ifrs-full:revenue'],
 ['Net Profit','ifrs-full:ProfitLoss'],
 ['Operating Profit','ifrs-full:profitlossfromcontinuingoperations'],
+['Interest Revenue','ifrs-full:InterestRevenueExpense'],
+
+#['Interest Received','ifrs-full:InterestIncomeOnLoansAndReceivables'],
 # Equity and Liabilites
 ['Cash','ifrs-full:CashAndCashEquivalents'],
 ['Current Assets','ifrs-full:CurrentAssets'],
+['Liabilities','ifrs-full:Liabilities'],
+['Provisions for Employees','ifrs-full:CurrentProvisionsForEmployeeBenefits'],
 ['Non-Current Assets','ifrs-full:NoncurrentAssets'],
 ['Goodwill','ifrs-full:Goodwill'],
 ['Intangible Assets','ifrs-full:IntangibleAssetsOtherThanGoodwill'],
@@ -63,7 +68,11 @@ lista=[['Revenue','ifrs-full:revenue'],
 ['Prepayments','ifrs-full:CurrentPrepayments'],
 ['Cash on hands','ifrs-full:CashOnHands'],
 ['Cash on banks','ifrs-full:BalancesWithBanks'],
-['Cash short investment','ifrs-full:ShorttermInvestmentsClassifiedAsCashEquivalents']
+['Cash short investment','ifrs-full:ShorttermInvestmentsClassifiedAsCashEquivalents'],
+['Employee Benefits','ifrs-full:EmployeeBenefitsExpense']
+#Disclosures (Non Numerical)
+#['Disclosure: Intangible','ifrs-full:DisclosureOfIntangibleAssetsExplanatory'],
+#['Disclosure: Leases','ifrs-full:DisclosureOfLeasesExplanatory']
 ]
 
 
@@ -81,7 +90,9 @@ lista_instant=[['Cash','ifrs-full:CashAndCashEquivalents'],
 ['Cash on hands','ifrs-full:CashOnHands'],
 ['Cash on banks','ifrs-full:BalancesWithBanks'],
 ['Cash short investment','ifrs-full:ShorttermInvestmentsClassifiedAsCashEquivalents'],
-['Trade receivables','ifrs-full:CurrentTradeReceivables']
+['Trade receivables','ifrs-full:CurrentTradeReceivables'],
+['Liabilities','ifrs-full:Liabilities'],
+['Provisions for Employees','ifrs-full:CurrentProvisionsForEmployeeBenefits']
 ]
 ##
 ##
@@ -107,7 +118,7 @@ def Format_Data(month, year):
     datafold='/Data/Chile/'
     ruts=CL.read_data(file_name,datafold)
 
-    file_name='registered_stocks_mw.csv'
+    file_name='registered_stocks.csv'
     tick=CL.read_data(file_name,datafold)
 
     # Then compares both to select right tickers 
@@ -129,7 +140,8 @@ def Format_Data(month, year):
 def Update_Data(month, year):
     
     # First updates ticker list from MW or another selected url
-    CL.scrap_mw()
+    #CL.scrap_mw() #Online option, not up to dateas of 14/04/2020, so not recommended
+    CL.scrap_offline()
     # Then updates list of Registered Businesses with ruts
     CL.scrap_rutlist(month,year)
     #Nothing else for now
@@ -545,6 +557,5 @@ def all_companies(lista,folder,month,year):
 #res=test_xblr('ifrs-full:profitlossfromcontinuingoperations','_ACT','contextref',wd+datafold+'06-2019/FALABELLA_06-2019/')
 #print(res)
 #print(listafinal)
-
 
 #read_pdf_fil('SECURITY_12-2019.pdf',wd+datafold+'12-2019NOTYET/')
