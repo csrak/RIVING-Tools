@@ -43,6 +43,8 @@ lista=[['Revenue','ifrs-full:revenue'],
 ['Cash','ifrs-full:CashAndCashEquivalents'],
 ['Current Assets','ifrs-full:CurrentAssets'],
 ['Liabilities','ifrs-full:Liabilities'],
+['Marketable Securities','ifrs-full:OtherCurrentFinancialAssets'],
+['Current Other Assets','ifrs-full:OtherCurrentNonfinancialAssets'],
 ['Provisions for Employees','ifrs-full:CurrentProvisionsForEmployeeBenefits'],
 ['Non-Current Assets','ifrs-full:NoncurrentAssets'],
 ['Goodwill','ifrs-full:Goodwill'],
@@ -79,6 +81,7 @@ lista=[['Revenue','ifrs-full:revenue'],
 
 
 lista_instant=[['Cash','ifrs-full:CashAndCashEquivalents'],
+['Liabilities','ifrs-full:Liabilities'],
 ['Current Assets','ifrs-full:CurrentAssets'],
 ['Non-Current Assets','ifrs-full:NoncurrentAssets'],
 ['Goodwill','ifrs-full:Goodwill'],
@@ -94,7 +97,9 @@ lista_instant=[['Cash','ifrs-full:CashAndCashEquivalents'],
 ['Cash short investment','ifrs-full:ShorttermInvestmentsClassifiedAsCashEquivalents'],
 ['Trade receivables','ifrs-full:CurrentTradeReceivables'],
 ['Liabilities','ifrs-full:Liabilities'],
-['Provisions for Employees','ifrs-full:CurrentProvisionsForEmployeeBenefits']
+['Provisions for Employees','ifrs-full:CurrentProvisionsForEmployeeBenefits'],
+['Marketable Securities','ifrs-full:OtherCurrentFinancialAssets'],
+['Current Other Assets','ifrs-full:OtherCurrentNonfinancialAssets'],
 ]
 ##
 ##
@@ -559,6 +564,8 @@ def all_companies(lista,folder,month,year):
 #upandgetem('09','2017')
 #upandgetem('12','2017')
 #upandgetem('03','2018')
+#upandgetem('06','2018')
+#upandgetem('06','2019')
 #upandgetem('03','2019')
 #upandgetem('09','2019')
 #upandgetem('12','2019')

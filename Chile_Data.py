@@ -190,7 +190,7 @@ def scrap_lists(url):
 # 
 #Scrap fillings obtains the fillings from a provided list in zip format (XBRL inside)
 #
-def scrap_fillings(urls,filenames):
+def scrap_fillings(urls,filenames,update=0):
         #Download fillings according to obtained list of URLs
         for i in range (0,len(urls)):
             if filenames[i] == '0':
@@ -204,28 +204,32 @@ def scrap_fillings(urls,filenames):
                 #folder=Path(wd).parent
                 #print(folder)
                 datafold='/Data/Chile/'
-                open(wd+datafold+filenames[i], 'wb').write(myfile.content)
-                temp=wd+datafold+filenames[i]
-                #download_wait(temp,wd+datafold)
-                if (temp!=temp.replace('.zip', '')):
-                    temp=temp.replace('.zip', '')
-                    if not os.path.exists(temp):
-                        os.mkdir(temp)
-                    print('Downloading ' + temp + '...\n')
-                    downloaded = 1
-                    while downloaded!=0:
-                        try:
-                            with ZipFile(wd+datafold+filenames[i], 'r') as zipObj:
-                        # Extract all the contents of zip file in different directory
-                                zipObj.extractall(temp)
-                                downloaded=0
-                        except BadZipfile:
-                            downloaded += 1
-                            print('Still downloading '+' (' +str(downloaded*5)+' seconds )' + temp + ' \n')
-                            time.sleep(5)
-                        if downloaded>12:
-                            print('error downloading ' + temp + 'Please download Manually before executing "allcompanies"')
-                            break
+                if update!=0 or not os.path.exists(wd+datafold+filenames[i]):
+                    open(wd+datafold+filenames[i], 'wb').write(myfile.content)
+                    temp=wd+datafold+filenames[i]
+                    #download_wait(temp,wd+datafold)
+                    if (temp!=temp.replace('.zip', '')):
+                        temp=temp.replace('.zip', '')
+                        if not os.path.exists(temp):
+                            os.mkdir(temp)
+                        print('Downloading ' + temp + '...\n')
+                        downloaded = 1
+                        time.sleep(2)
+                        while downloaded!=0:
+                            try:
+                                with ZipFile(wd+datafold+filenames[i], 'r') as zipObj:
+                            # Extract all the contents of zip file in different directory
+                                    zipObj.extractall(temp)
+                                    downloaded=0
+                            except BadZipfile:
+                                downloaded += 1
+                                print('Still downloading '+' (' +str(downloaded*5)+' seconds )' + temp + ' \n')
+                                time.sleep(5)
+                            if downloaded>12:
+                                print('error downloading ' + temp + 'Please download Manually before executing "allcompanies"')
+                                break
+                else:
+                    print("Already downloaded "+ wd+datafold+filenames[i] + ' and Update not set')
 #########################################################
 #########################################################
 #########################################################
