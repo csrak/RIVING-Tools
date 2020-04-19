@@ -205,13 +205,32 @@ def plot_data_time(datelist,data1, data2=[]):
 def DSO(ticker,df,date=0):#Days Sales Outsanding
 	revenue,datelist1=list_by_date(ticker, 'revenue',df)
 	accounts_receivable,datelist2=list_by_date(ticker, 'Trade Receivables',df)
-	DOS=[]
+	DSO=[]
 	if datelist1==datelist2:
 		for i in range(len(datelist1)): #Credit sales assumed not cash revenue
-			DOS.append(accounts_receivable[i+1]/revenue[i+1]*91.0)
-	return DOS, datelist1
+			DSO.append(accounts_receivable[i+1]/revenue[i+1]*91.0)
+	return DSO, datelist1
 
-def rDSO(ticker,df,date=0):#Days Sales Outsanding
+def DIO(ticker,df,date=0):#Days Inventories Outsanding
+	COS,datelist1=list_by_date(ticker, 'Cost of sales',df)
+	inventories,datelist2=list_by_date(ticker, 'inventories',df)
+	DIO=[]
+	DIO.append(0)
+	if datelist1==datelist2:
+		for i in range(len(datelist1)-1): #Credit sales assumed not cash revenue
+			DIO.append((inventories[i+2]+inventories[i+1])/COS[i+2]*91.0)
+	return DIO, datelist1
+
+def DPO(ticker,df,date=0):#Days Sales Outsanding
+	COS,datelist1=list_by_date(ticker, 'Cost of sales',df)
+	current_payables,datelist2=list_by_date(ticker, 'current payables',df)
+	DPO=[]
+	if datelist1==datelist2:
+		for i in range(len(datelist1)): #Credit sales assumed not cash revenue
+			DPO.append(current_payables[i+1]/COS[i+1]*91.0)
+	return DPO, datelist1
+
+def rDSO(ticker,df,date=0):#Days Sales Outsanding with calculated Credit Sales (Revenue - Cash Sales)
 	revenue,datelist1=list_by_date(ticker, 'revenue',df)
 	cfs,datelist2=list_by_date(ticker, 'Cash from sales',df)
 	cfy,datelist1=list_by_date(ticker, 'Cash from yield',df)	
@@ -254,20 +273,29 @@ def rec_turn(ticker,df,date=0):#Receivable Turnover
 			rec_turn.append(credit_sales/accounts_receivable[i+1])
 	return rec_turn, datelist1
 
-	 
+def CCO: #W.I.P
+	start=time.time()
+	dios,datelist=DIO('SQM',df)
+	dsos,datelist=DSO('SQM',df)
+	dpos,datelist=DPO('SQM',df)
+	for i in range(len(datelist)):
+		print(dios[i]+dsos[i]-dpos[i])
+	print(time.time()-start)
+	return 'not yet'
 
 
 #############
 #Testing how pandas and the table works
 
 #start='2018/03'
-#datafold='/Data/Chile/'
-#file_name='Database_Chile_Since_03-2016.csv'
+datafold='/Data/Chile/'
+file_name='Database_Chile_Since_03-2016.csv'
 
 df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
 start=time.time()
 df = all_CLP(df)
 print(time.time()-start)
+
 #tickers='CGE'
 #datas,datelist=list_by_date(tickers,'assets',df)
 #datas2,datelist=list_by_date(tickers,'liabilities',df)
