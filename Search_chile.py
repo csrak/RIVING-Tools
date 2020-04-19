@@ -105,7 +105,8 @@ def date_range_gen(min,max):
 #If data not found for date data is NaN
 
 def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the dataframe after cutting 3rd row
-	
+	#Returns list with element 0 being the name of the data, and the ret being the data
+	#Also returns list of dates, both in same order
 	data=rcl.check_parameter(data)
     #col= df.loc[:, [data,'Date','TICKER']]	
 	datelist=[]
@@ -134,6 +135,7 @@ def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the
 	#print(datas)
 	#print(datas)
 	n=len(datas)
+	#print(datas)
 	temp=[]
 	for i in range(n//2):
 		if data.lower() not in rcl.lista_instant:		
@@ -164,7 +166,8 @@ def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the
 					temp.append(value)					
 				elif float(datas[2*i-1])==2.0:				
 					#If we have cumulative data but a point is missing we get out informing this needs to be manually adressed
-					return "Cumulative and Missing data at",datelist[j]
+					print('Cumulative and Missing data at', datelist[i])
+					temp.append(np.nan)
 				else:
 					temp.append(float(datas[2*i])-float(datas[2*i-2]))
 			else:
@@ -199,24 +202,83 @@ def plot_data_time(datelist,data1, data2=[]):
 	plt.show()
 	return 0
 
+def DSO(ticker,df,date=0):#Days Sales Outsanding
+	revenue,datelist1=list_by_date(ticker, 'revenue',df)
+	accounts_receivable,datelist2=list_by_date(ticker, 'Trade Receivables',df)
+	DOS=[]
+	if datelist1==datelist2:
+		for i in range(len(datelist1)): #Credit sales assumed not cash revenue
+			DOS.append(accounts_receivable[i+1]/revenue[i+1]*91.0)
+	return DOS, datelist1
+
+def rDSO(ticker,df,date=0):#Days Sales Outsanding
+	revenue,datelist1=list_by_date(ticker, 'revenue',df)
+	cfs,datelist2=list_by_date(ticker, 'Cash from sales',df)
+	cfy,datelist1=list_by_date(ticker, 'Cash from yield',df)	
+	cfr,datelist2=list_by_date(ticker, 'Cash from rent',df)
+	accounts_receivable,datelist2=list_by_date(ticker, 'Trade Receivables',df)
+	rDSO=[]
+	yrDSO=[]
+	if datelist1==datelist2:
+		for i in range(len(datelist1)):
+			print('cash '+str(cfs[i+1]))
+			print('revenue '+ str(revenue[i+1]))
+			if np.isnan(cfy[i+1]):
+				print('Cash from yield not found at '+str(datelist1[i])+', Assumed 0')
+				cfy[i+1]=0
+			if np.isnan(cfr[i+1]):
+				print('Cash from rent not found at '+str(datelist1[i])+', Assumed 0')
+				cfr[i+1]=0
+			credit_sales=revenue[i+1]-cfs[i+1]-cfy[i+1]-cfr[i+1] #Credit sales assumed not cash revenue
+			rDSO.append(accounts_receivable[i+1]/credit_sales*91.0)
+			if i>0 and i%4==0:
+				print(i)
+				yrDSO.append((rDSO[i-1]+rDSO[i-2]+rDSO[i-3]+rDSO[i-4])/4)
+	return rDSO, datelist1,yrDSO
+def rec_turn(ticker,df,date=0):#Receivable Turnover
+	revenue,datelist1=list_by_date(ticker, 'revenue',df)
+	cfs,datelist2=list_by_date(ticker, 'Cash from sales',df)
+	cfy,datelist1=list_by_date(ticker, 'Cash from yield',df)	
+	cfr,datelist2=list_by_date(ticker, 'Cash from rent',df)
+	accounts_receivable,datelist2=list_by_date(ticker, 'Trade Receivables',df)
+	rec_turn=[]
+	if datelist1==datelist2:
+		for i in range(len(datelist1)):
+			if np.isnan(cfy[i+1]):
+				print('Cash from yield not found at '+str(datelist1[i])+', Assumed 0')
+				cfy[i+1]=0
+			if np.isnan(cfr[i+1]):
+				print('Cash from rent not found at '+str(datelist1[i])+', Assumed 0')
+				cfr[i+1]=0
+			credit_sales=revenue[i+1]-cfs[i+1]-cfy[i+1]-cfr[i+1] #Credit sales assumed not cash revenue
+			rec_turn.append(credit_sales/accounts_receivable[i+1])
+	return rec_turn, datelist1
+
+	 
 
 
 #############
 #Testing how pandas and the table works
 
-start='2018/03'
-datafold='/Data/Chile/'
-file_name='Database_Chile_Since_03-2016.csv'
+#start='2018/03'
+#datafold='/Data/Chile/'
+#file_name='Database_Chile_Since_03-2016.csv'
 
 df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
 start=time.time()
 df = all_CLP(df)
 print(time.time()-start)
-tickers='COLBUN'
-datas,datelist=list_by_date(tickers,'current assets',df)
-datas2,datelist=list_by_date(tickers,'current liabilities',df)
-print(datelist)
-plot_data_time(datelist,datas,datas2)
-
-
+#tickers='CGE'
+#datas,datelist=list_by_date(tickers,'assets',df)
+#datas2,datelist=list_by_date(tickers,'liabilities',df)
+#print(datelist)
+#plot_data_time(datelist,datas,datas2)
+#start=time.time()
+#print('rDSO:')
+#print(rDSO('SQM',df))
+#print(time.time()-start)
+#start=time.time()
+#print('rec_turn:')
+#print(rec_turn('SQM',df))
+#print(time.time()-start)
 #search_date('06','2019',df,'WATTS')
