@@ -8,9 +8,10 @@ from matplotlib import pyplot as plt
 import time
 #############
 
-USDtoCLP=830.0 #Must be replaced with a function later
+USDtoCLP=830 #Must be replaced with a function later
 
 #Convert all USD to CLP and clean the table. Need current USD convertion
+#Now optimized and return an archive with the convertions
 def all_CLP(df):
 	n=len(df)
 	n2=len(df.columns)
@@ -67,10 +68,6 @@ def all_CLP(df):
 	final_df.to_csv(datafold+'Database_in_CLP.csv', sep=','  , index = None, header=True)
 	return final_df
 
-#Coment ####################################
-#<><><><><><><><><><><><><><><><><><>#
-
-
 
 def search_date(month,year,df,ticker):
     date=int(month)+int(year)*100
@@ -79,6 +76,7 @@ def search_date(month,year,df,ticker):
     a=list(set(a) & set(b))
     a=min(a)
     return a,a+1
+
 
 def date_range_gen(min,max):
 	iyear=min//100
@@ -115,6 +113,8 @@ def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the
 	df=df.loc[df['TICKER']==ticker]
 	df=df.loc[:,[data,'TICKER','Date']]
 	datelist=df['Date'].tolist()
+	if len(datelist)==0:
+		return [data],[]
 	datelist=[int(i) for i in datelist]
 	
 	#print(df)
@@ -180,7 +180,8 @@ def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the
 	#print(datas)
 	#print(datelist)
 	return datas,datelist
-		
+
+
 def plot_data_time(datelist,data1, data2=[]):
 	title1=data1[0]
 	title2=''
@@ -208,8 +209,9 @@ def DSO(ticker,df,date=0):#Days Sales Outsanding
 	DSO=[]
 	if datelist1==datelist2:
 		for i in range(len(datelist1)): #Credit sales assumed not cash revenue
-			DSO.append(accounts_receivable[i+1]/revenue[i+1]*91.0)
-	return DSO, datelist1
+			DOS.append(accounts_receivable[i+1]/revenue[i+1]*91.0)
+	return DOS, datelist1
+	
 
 def DIO(ticker,df,date=0):#Days Inventories Outsanding
 	COS,datelist1=list_by_date(ticker, 'Cost of sales',df)
@@ -254,6 +256,7 @@ def rDSO(ticker,df,date=0):#Days Sales Outsanding with calculated Credit Sales (
 				print(i)
 				yrDSO.append((rDSO[i-1]+rDSO[i-2]+rDSO[i-3]+rDSO[i-4])/4)
 	return rDSO, datelist1,yrDSO
+	
 def rec_turn(ticker,df,date=0):#Receivable Turnover
 	revenue,datelist1=list_by_date(ticker, 'revenue',df)
 	cfs,datelist2=list_by_date(ticker, 'Cash from sales',df)
@@ -284,6 +287,7 @@ def CCO(): #W.I.P
 	return 'not yet'
 
 
+#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#
 #############
 #Testing how pandas and the table works
 
@@ -291,10 +295,10 @@ def CCO(): #W.I.P
 datafold='/Data/Chile/'
 file_name='Database_Chile_Since_03-2016.csv'
 
-df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
-start=time.time()
-df = all_CLP(df)
-print(time.time()-start)
+#df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
+#start=time.time()
+#df = all_CLP(df)
+#print(time.time()-start)
 
 #tickers='CGE'
 #datas,datelist=list_by_date(tickers,'assets',df)
