@@ -288,13 +288,13 @@ def CCO(): #W.I.P
 #Testing how pandas and the table works
 
 #start='2018/03'
-datafold='/Data/Chile/'
-file_name='Database_Chile_Since_03-2016.csv'
+#datafold='/Data/Chile/'
+#file_name='Database_Chile_Since_03-2016.csv'
 
-df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
-start=time.time()
-df = all_CLP(df)
-print(time.time()-start)
+#df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
+#start=time.time()
+#df = all_CLP(df)
+#print(time.time()-start)
 
 #tickers='CGE'
 #datas,datelist=list_by_date(tickers,'assets',df)

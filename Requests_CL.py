@@ -11,7 +11,7 @@ import re
 import tabula #install tabula-py
 import PyPDF2
 import Chile_Data as CL
-import live_data as live
+#import live_data as live
 from zipfile import ZipFile
 import fnmatch
 import time
@@ -45,6 +45,9 @@ lista=[['Revenue','ifrs-full:revenue'],
 ['Speculation Cash','ifrs-full:CashReceiptsFromFutureContractsForwardContractsOptionContractsAndSwapContractsClassifiedAsInvestingActivities'],
 ['Current payables','ifrs-full:TradeAndOtherCurrentPayables'],
 ['Cost of Sales','ifrs-full:CostOfSales'],
+['EBIT','ifrs-full:ProfitLossBeforeTax'],
+['Depreciation','ifrs-full:DepreciationAndAmortisationExpense'],
+['Interest','ifrs-full:InterestExpense'],
 # Equity and Liabilites
 ['Cash','ifrs-full:CashAndCashEquivalents'],
 ['Current Assets','ifrs-full:CurrentAssets'],
@@ -307,6 +310,9 @@ def get_unknown_reference(soup,param,month,year):
     if int(start_month)<10:
         start_month='0'+start_month #Strings usually include the 0
     contexts=soup.find_all('xbrli:context')
+    filling_type=soup.find_all('ifrs-full:revenue')
+    if not filling_type:
+        param=param.replace('ifrs-full','ifrs')
     per='period'
     endd='enddate'
     stard='startdate'
@@ -382,6 +388,7 @@ def read_xblr(folder,fin_dat_list,month,year):
         name="*_C.xbrl"    
     os.chdir(folder)
     for file in glob.glob(name): #usually there is only one in the folder, but didn't want to code a name generator so we do it for "all" which is more like "any"
+        
         with open(file, "r", errors='ignore') as f:
             filling = f.read()
             
@@ -549,6 +556,7 @@ def all_companies(lista,folder,month,year):
             if (j==0):
                 print('initial lenght = '+ str(len(listafinal.columns)))
                 check=len(listafinal.columns)
+                print(listafinal)
             if (len(listafinal.columns)!=check):
                 print('weird lenght = '+ str(len(listafinal.columns)))
                 print('\nNon Existing Company?')
@@ -560,7 +568,19 @@ def all_companies(lista,folder,month,year):
     file_name='Database_Chile_Since_'+month+'-'+year+'.csv'
     all_stocks_all_dates.to_csv(folder+file_name, index = None, header=True)
     print(all_stocks_all_dates)
-    
+
+#upandgetem('03','2013')
+#upandgetem('06','2013')
+#upandgetem('09','2013')
+#upandgetem('12','2013')
+#upandgetem('03','2014')
+#upandgetem('06','2014')
+#upandgetem('09','2014')
+#upandgetem('12','2014')
+#upandgetem('03','2015')
+#upandgetem('06','2015')
+#upandgetem('09','2015')
+#upandgetem('12','2015')
 #upandgetem('03','2016')
 #upandgetem('06','2016')
 #upandgetem('09','2016')
@@ -571,16 +591,16 @@ def all_companies(lista,folder,month,year):
 #upandgetem('12','2017')
 #upandgetem('03','2018')
 #upandgetem('06','2018')
-#upandgetem('06','2019')
+#upandgetem('09','2018')
+#upandgetem('12','2018')
 #upandgetem('03','2019')
+#upandgetem('06','2019')
 #upandgetem('09','2019')
 #upandgetem('12','2019')
-#upandgetem('12','2018')
-#upandgetem('09','2018')
 #upandgetem('03','2020')
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
-#all_companies(lista,wd+datafold,'03','2016')
+#all_companies(lista,wd+datafold,'03','2013')
 #listafinal=read_xblr(wd+datafold+'06-2019/LASCONDES_06-2019/',lista)
 #res=test_xblr('ifrs-full:profitlossfromcontinuingoperations','_ACT','contextref',wd+datafold+'06-2019/FALABELLA_06-2019/')
 #print(res)
