@@ -508,8 +508,8 @@ def test_xblr(param, param2,atparam2, folder):
 #Useful Data
 #list2=[['Major Customer Risk','ifrs-full:DisclosureOfSegmentsMajorCustomersExplanatory'],]
 
-def all_companies(lista,folder,month,year):
-
+def all_companies(lista,folder,month,year,update=0,monthup=0,yearup=0):
+    #Option Update, to update existing database with new data change update option to 1 and add a month and a year from an existing database file
     ## The result will be a dataframe of all data with indicated date informat int -> year*100+month
     #  and stock ticker in "Ticker" column   
     #
@@ -565,9 +565,19 @@ def all_companies(lista,folder,month,year):
                 all_stocks_all_dates.append(listafinal)
 
     all_stocks_all_dates = pd.concat(all_stocks_all_dates)
-    file_name='Database_Chile_Since_'+month+'-'+year+'.csv'
-    all_stocks_all_dates.to_csv(folder+file_name, index = None, header=True)
-    print(all_stocks_all_dates)
+    if update==0:
+        file_name='Database_Chile_Since_'+month+'-'+year+'.csv'
+        all_stocks_all_dates.to_csv(folder+file_name, index = None, header=True)
+        print(all_stocks_all_dates)
+    else:
+        try:
+            file_name='Database_Chile_Since_'+monthup+'-'+yearup+'.csv'
+            all_stocks_all_dates.to_csv(folder+file_name, mode = 'a', index = None, header=False)
+        except IOError:
+            print('Database file '+ file_name + 'does not exist')
+
+
+
 
 #upandgetem('03','2013')
 #upandgetem('06','2013')

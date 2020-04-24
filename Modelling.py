@@ -37,10 +37,23 @@ def basic_dcf(ticker,df):
 	#print(growth)
 	value=opcash*(1+fit[1]/growth[-1])**10+cash[-1]-liabilities[-1]
 	value=value/((1+(rate/100))**10)
-	value=value/shares[-1]
+	problem=False
+	mktcap=0
+	if not  isinstance(quote,str):
+		mktcap=quote
+	for i in range(len(shares)):
+		try:
+			value=value/shares[len(shares)-1-i]
+			mktcap=mktcap*shares[len(shares)-1-i]
+			problem=False
+			break
+		except ZeroDivisionError:
+			problem=True
+	if problem==True:
+		return [ticker,'shares X '+ str(value*20),str(quote)]
 	print("right value = "+ str(value*20))
 	print("present value = "+str(quote))
-	return [ticker,str(value*20),str(quote)]
+	return [ticker,str(value*20),str(quote),str(mktcap)]
 
 def model_all_0(df):
 	tickers=rcl.CL.read_data('registered_stocks.csv','/Data/Chile/')
