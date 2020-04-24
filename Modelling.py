@@ -31,6 +31,8 @@ def basic_dcf(ticker,df):
 	print(growth)
 	#growth=np.mean(growth)
 	count=list(range(len(growth)))
+	if len(growth)<2:
+		return [ticker,'Not Found',str(quote)]
 	fit = np.polyfit(count, growth, 1)
 	#print(growth)
 	value=opcash*(1+fit[1]/growth[-1])**10+cash[-1]-liabilities[-1]
@@ -38,8 +40,16 @@ def basic_dcf(ticker,df):
 	value=value/shares[-1]
 	print("right value = "+ str(value*20))
 	print("present value = "+str(quote))
+	return [ticker,str(value*20),str(quote)]
 
-
+def model_all_0(df):
+	tickers=rcl.CL.read_data('registered_stocks.csv','/Data/Chile/')
+	tickers=tickers['Ticker'].values.tolist()
+	all=[]
+	for tick in tickers:
+		all.append(basic_dcf(tick,df))
+	print(*all, sep = "\n") 
+		
 
 
 
@@ -47,4 +57,5 @@ def basic_dcf(ticker,df):
 datafold='/Data/Chile/'
 file_name='Database_in_CLP.csv'
 df=rcl.CL.read_data(file_name,datafold)
-basic_dcf('FALABELLA',df)
+#basic_dcf('FALABELLA',df)
+model_all_0(df)
