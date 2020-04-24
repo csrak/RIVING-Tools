@@ -23,6 +23,6 @@ def yahoo_quote_CL(ticker): #Obtain quote from yahoo finance
     sleep(4)
     parser = lh.fromstring(response.text)
     summary_table = parser.xpath('//span[contains(@class,"Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)")]//text()')
-    return float(summary_table[0])
+    return float(summary_table[0].replace(',',''))
 
-print(yahoo_quote_CL('SMU'))
+#print(yahoo_quote_CL('SMU'))
