@@ -18,9 +18,7 @@ def basic_dcf(ticker,df):
 	cash,datelist=scl.list_by_date(ticker, data,df)
 	data='liabilities'
 	liabilities,datelist=scl.list_by_date(ticker, data,df)
-	data='shares'
-	shares,datelist=scl.list_by_date(ticker, data,df)
-	quote=ld.yahoo_quote_CL(ticker)
+	quote,mk=ld.barron_quote_CL(ticker)
 	#print('quote= '+ str(quote))
 	growth=[]
 	#scl.plot_data_time(datelist,op_cash)
@@ -41,18 +39,19 @@ def basic_dcf(ticker,df):
 	mktcap=0
 	if not  isinstance(quote,str):
 		mktcap=quote
-	for i in range(len(shares)):
-		try:
-			value=value/shares[len(shares)-1-i]
-			mktcap=mktcap*shares[len(shares)-1-i]
-			problem=False
-			break
-		except ZeroDivisionError:
-			problem=True
+	for i in range(0,len(shares)-1):
+		if shares[len(shares)-1-i]>1000:
+			try:
+				value=value/shares[len(shares)-1-i]
+				mktcap=mktcap*shares[len(shares)-1-i]
+				problem=False
+				break
+			except ZeroDivisionError:
+				problem=True
 	if problem==True:
 		return [ticker,'shares X '+ str(value*20),str(quote)]
-	print("right value = "+ str(value*20))
-	print("present value = "+str(quote))
+	#print("right value = "+ str(value*20))
+	#print("present value = "+str(quote))
 	return [ticker,str(value*20),str(quote),str(mktcap)]
 
 def model_all_0(df):
@@ -61,7 +60,9 @@ def model_all_0(df):
 	all=[]
 	for tick in tickers:
 		all.append(basic_dcf(tick,df))
-	print(*all, sep = "\n") 
+	df=pd.DataFrame(all,columns=['ticker','Estimate Value','Present Value','Market Cap.'])
+	df.to_csv("./dcf_0_order.csv", sep=',',index=False)
+	#print(*all, sep = "\n") 
 		
 
 
@@ -72,3 +73,6 @@ file_name='Database_in_CLP.csv'
 df=rcl.CL.read_data(file_name,datafold)
 #basic_dcf('FALABELLA',df)
 model_all_0(df)
+
+
+############################ Ignore everything under ths line

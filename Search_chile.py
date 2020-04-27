@@ -132,7 +132,7 @@ def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the
 		if check==0:
 				datas.append(np.nan)
 				datas.append(np.nan)
-	#print(datas)
+	print(datas)
 	#print(datas)
 	n=len(datas)
 	#print(datas)
@@ -291,16 +291,18 @@ def CCO(): #W.I.P
 #############
 #Testing how pandas and the table works
 
-#datafold='/Data/Chile/'
-#file_name='Database_Chile_Since_03-2013.csv'
+datafold='/Data/Chile/'
+file_name='Database_Chile_Since_03-2013.csv'
 
-#df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
+df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
 #start=time.time()
-#df = all_CLP(df)
+df = all_CLP(df)
 #print(time.time()-start)
 
-#tickers='CGE'
-#datas,datelist=list_by_date(tickers,'assets',df)
+tickers='ATSA'
+datas,datelist=list_by_date(tickers,'net profit',df)
+print(datas)
+print(datelist)
 #datas2,datelist=list_by_date(tickers,'liabilities',df)
 #print(datelist)
 #plot_data_time(datelist,datas,datas2)
