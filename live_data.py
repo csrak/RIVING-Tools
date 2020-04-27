@@ -1,4 +1,6 @@
 import requests
+import random
+import time
 import lxml.html as lh
 from time import sleep
 import argparse
@@ -13,6 +15,9 @@ import tabula #install tabula-py
 import Chile_Data as CL
 from zipfile import ZipFile
 import urllib3
+from selenium import webdriver
+from selenium.webdriver.support.ui import Select
+import sys
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def mw_quote_CL(ticker): #Obtain quote from marketwatch finance
@@ -58,7 +63,30 @@ def yahoo_quoteA_CL(ticker): #Obtain quote from yahoo finance
         quote=float(summary_table[0].replace(',',''))     
     return quote
 
-
-
+def barron_quote_CL(ticker): #Obtain quote from yahoo finance
+    
+    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+    url = "https://www.barrons.com/quote/stock/cl/xsgo/"+ticker
+    response = requests.get(url, headers=agent,verify=False)
+    print ("Parsing %s"%(url))
+    parser = lh.fromstring(response.text)
+    summary_table = parser.xpath('.//td')   
+    multiplier=''
+    for i in range(len(summary_table)):
+        if summary_table[i].text== 'Market Value':
+            multiplier=(summary_table[i+1].text)[-1]
+            summary_table=(((summary_table[i+1].text).replace('$','')).replace('B','')).replace('M','')
+            break    
+    if multiplier=='B':
+        multiplier=1000000000
+    elif multiplier=='M':
+        multiplier=1000000
+    else:
+        multiplier=1
+    market_cap=float(summary_table)*multiplier
+    price = parser.xpath('//span[contains(@class,"market__price bgLast")]//text()')   
+    price=float(price[0])
+    return price,market_cap
+    #return quote
 #print(mw_quote_CL('SMU'))    
 #print(yahoo_quote_CL('SMU'))

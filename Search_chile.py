@@ -175,7 +175,7 @@ def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the
 		else:
 			temp.append(float(datas[2*i]))
 
-	datas=[i/1000 for i in temp]
+	datas=[i for i in temp]
 	datas.insert(0,data)
 	#print(datas)
 	#print(datelist)
@@ -209,8 +209,8 @@ def DSO(ticker,df,date=0):#Days Sales Outsanding
 	DSO=[]
 	if datelist1==datelist2:
 		for i in range(len(datelist1)): #Credit sales assumed not cash revenue
-			DOS.append(accounts_receivable[i+1]/revenue[i+1]*91.0)
-	return DOS, datelist1
+			DSO.append(accounts_receivable[i+1]/revenue[i+1]*91.0)
+	return DSO, datelist1
 	
 
 def DIO(ticker,df,date=0):#Days Inventories Outsanding

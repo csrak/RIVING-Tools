@@ -30,7 +30,7 @@ years=set(years) #Set for faster search
 present_trimester_tags={'TrimestreActual','p6','id113','Actual','ID_P3','CierreTrimestreActual','p1_Instant'}#,'id349','id3810'} #Only present trimester
 #weirder_tags= {'ctx_instant_Fecha_20190331','ctx_instant_Fecha_20190630','ctx_instant_Fecha_20190930','ctx_instant_Fecha_20191231','ID_P1'} # Present trimester, but may be wrong
 cumulative_tags={'TrimestreAcumuladoActual','p1_Duration','id11792','AcumuladoAnoActual'}#,'id11','id15027'} #YearToDate
-CLP_currency_tags={'CLP','id14'} #Tags to identify chilean currency
+CLP_currency_tags={'CLP','id14','shares','pure'} #Tags to identify chilean currency
 
 #Numbers
 lista=[['Revenue','ifrs-full:revenue'],
@@ -310,7 +310,8 @@ def get_unknown_reference(soup,param,month,year):
     if int(start_month)<10:
         start_month='0'+start_month #Strings usually include the 0
     contexts=soup.find_all('xbrli:context')
-    filling_type=soup.find_all('ifrs-full:revenue')
+    filling_type=soup.find_all(param)
+    #print(filling_type)
     if not filling_type:
         param=param.replace('ifrs-full','ifrs')
     per='period'
@@ -327,6 +328,8 @@ def get_unknown_reference(soup,param,month,year):
     else:
         contexts=soup.find_all('context')
     tag_list = soup.find_all(param)
+    #print(param + '=' )
+    #print(tag_list)
     #ref_list=[tag['contextref'] for tag in tag_list]
     #print(tag_list)
     for datafromperiods in tag_list: #Loop through the different periods for which the data exists
@@ -388,24 +391,28 @@ def read_xblr(folder,fin_dat_list,month,year):
         name="*_C.xbrl"    
     os.chdir(folder)
     for file in glob.glob(name): #usually there is only one in the folder, but didn't want to code a name generator so we do it for "all" which is more like "any"
-        
         with open(file, "r", errors='ignore') as f:
+
             filling = f.read()
             
             soup = BeautifulSoup(filling, 'lxml')
             tag_list = soup.find_all()
             #Attributes are in lowercase, which is why this may either be done manually
             # or it may be done for all attributes 
-
-            #Revenue
+            #print(tag_list)
             fin_dat=['', 0.0, 0, 0]
             for i in range (0,len(fin_dat_list)):
                 fin_dat=['', 0.0, 0, 0]
                 found = 0 # Some very funny guys at some companies think it makes sense to use dates for reference numbers in standarized fillings
                                 #So I'm hardcoding tags, which is horrible
                 for tag in tag_list:
+                    #print(tag.name)
+                    #try:
+                    #    print(tag["contextref"])
+                    #except KeyError:
+                    #    print('\n')
                     if fin_dat_list[i][1] == tag.name and (tag['contextref'] in present_trimester_tags):
-                        #print('Revenue' + ' '+ tag.text + ' ' + tag['unitref'] )
+                        #print(tag.name + ' '+ tag.text + ' ' + tag['unitref'] )
                         fin_dat[1] = float(tag.text)   
                         if (tag['unitref'] in CLP_currency_tags):
                             fin_dat[3] = 0
@@ -427,7 +434,7 @@ def read_xblr(folder,fin_dat_list,month,year):
                 if found == 0:
                     for tag in tag_list:
                         if fin_dat_list[i][1] == tag.name and (tag['contextref'] in cumulative_tags):
-                            #print('Revenue' + ' '+ tag.text + ' ' + tag['unitref'] )
+                            #print( tag.name + ' '+ tag.text + ' ' + tag['unitref'] )
                             if (tag['unitref'] in CLP_currency_tags):
                                 fin_dat[3] = 0
                             else:
@@ -450,6 +457,7 @@ def read_xblr(folder,fin_dat_list,month,year):
     final_list=temp_final_list
     column_names = final_list.pop(0)
     fin_df = pd.DataFrame(final_list, columns=column_names)
+    #print(fin_df)
     end = time.time()
     print('Execution time = ')
     print(end - start_time)
@@ -611,8 +619,7 @@ def all_companies(lista,folder,month,year,update=0,monthup=0,yearup=0):
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')
-#listafinal=read_xblr(wd+datafold+'06-2019/LASCONDES_06-2019/',lista)
-#res=test_xblr('ifrs-full:profitlossfromcontinuingoperations','_ACT','contextref',wd+datafold+'06-2019/FALABELLA_06-2019/')
+#read_xblr(wd+datafold+'03-2019/ATSA_03-2019/',lista,'03','2019')
 #print(res)
 #print(listafinal)
 ################
