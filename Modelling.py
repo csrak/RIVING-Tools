@@ -18,7 +18,29 @@ def basic_dcf(ticker,df):
 	cash,datelist=scl.list_by_date(ticker, data,df)
 	data='liabilities'
 	liabilities,datelist=scl.list_by_date(ticker, data,df)
+	data='shares'
+	shares,datelist=scl.list_by_date(ticker, data,df)
 	quote,mk=ld.barron_quote_CL(ticker)
+	print(shares)
+
+	if len(shares)>1 and shares[-1]==shares[-1] and shares[-1]!=0 and quote!=0:
+		if quote=='Try another scraper':
+			shares=1
+			print('Share not traded, value = 0 (changed to dummy 1)')
+		elif abs((float(shares[-1])-float(mk/quote))/float(shares[-1]))<0.15:
+			shares=shares[-1]
+		else:
+			shares=mk/quote
+	else:
+		if quote=='Try another scraper':
+			shares=1
+			print('Share not traded, value = 0 (changed to dummy 1)')
+		else:
+			try:
+				shares=mk/quote
+			except ZeroDivisionError:
+				shares=1
+				print('Share not traded, value = 0 (changed to dummy 1)')
 	#print('quote= '+ str(quote))
 	growth=[]
 	#scl.plot_data_time(datelist,op_cash)
@@ -35,24 +57,10 @@ def basic_dcf(ticker,df):
 	#print(growth)
 	value=opcash*(1+fit[1]/growth[-1])**10+cash[-1]-liabilities[-1]
 	value=value/((1+(rate/100))**10)
-	problem=False
-	mktcap=0
-	if not  isinstance(quote,str):
-		mktcap=quote
-	for i in range(0,len(shares)-1):
-		if shares[len(shares)-1-i]>1000:
-			try:
-				value=value/shares[len(shares)-1-i]
-				mktcap=mktcap*shares[len(shares)-1-i]
-				problem=False
-				break
-			except ZeroDivisionError:
-				problem=True
-	if problem==True:
-		return [ticker,'shares X '+ str(value*20),str(quote)]
+	value=value/shares
 	#print("right value = "+ str(value*20))
 	#print("present value = "+str(quote))
-	return [ticker,str(value*20),str(quote),str(mktcap)]
+	return [ticker,str(value*20),str(quote),str(mk)]
 
 def model_all_0(df):
 	tickers=rcl.CL.read_data('registered_stocks.csv','/Data/Chile/')

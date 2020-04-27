@@ -61,8 +61,19 @@ def Price_to_Earnings(df,years=1):
 	for Ticker in tickers:
 		datas,datelist=SC.list_by_date(Ticker,'net profit',df) #Datos en miles de pesos
 		datalist=datas[1:]
+		#price=ld.yahoo_quote_CL(Ticker)
+		
 	return 0
 
+def Prices():
+	tickers=rcl.CL.read_data('registered_stocks.csv','/Data/Chile/')
+	tickers=tickers['Ticker'].values.tolist()
+	archivo=open('Prices.csv','w')
+	archivo.write('price'+','+'Ticker'+'\n')
+	for Ticker in tickers:
+		price=ld.yahoo_quote_CL(Ticker)
+		archivo.write(str(price)+','+Ticker+'\n')
+	archivo.close()
 
 #####################################################################
 
@@ -75,8 +86,14 @@ df=rcl.CL.read_data(file_name,datafold)
 #start=time.time()
 #df = SC.all_CLP(df)
 
-datas,datelist=SC.list_by_date(Ticker,'net profit',df) 
-quaters_to_years(datas,datelist)
+#datas,datelist=SC.list_by_date(Ticker,'net profit',df) 
+#quaters_to_years(datas,datelist)
+
+#print(rcl.CL.read_data('registered_stocks.csv','/Data/Chile/'))
+Price_to_Earnings(df)
+Prices()
+
+
 
 #find_condition(df,'current assets>0')
 #find_condition(df,'current assets=0')
