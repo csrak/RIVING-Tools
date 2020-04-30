@@ -119,6 +119,7 @@ venv.bak/
 
 # mkdocs documentation
 /site
+/Data/Chile/*/
 
 # mypy
 .mypy_cache/
@@ -127,3 +128,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Stocks
