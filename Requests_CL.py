@@ -587,6 +587,8 @@ def all_companies(lista,folder,month,year,update=0,monthup=0,yearup=0):
 
 
 
+
+#Update_Data('03','2013')
 #upandgetem('03','2013')
 #upandgetem('06','2013')
 #upandgetem('09','2013')
@@ -599,7 +601,7 @@ def all_companies(lista,folder,month,year,update=0,monthup=0,yearup=0):
 #upandgetem('06','2015')
 #upandgetem('09','2015')
 #upandgetem('12','2015')
-#upandgetem('03','2016')
+##upandgetem('03','2016')
 #upandgetem('06','2016')
 #upandgetem('09','2016')
 #upandgetem('12','2016')

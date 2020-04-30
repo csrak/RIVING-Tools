@@ -214,7 +214,7 @@ def scrap_fillings(urls,filenames,update=0):
                             os.mkdir(temp)
                         print('Downloading ' + temp + '...\n')
                         downloaded = 1
-                        time.sleep(2)
+                        time.sleep(1)
                         while downloaded!=0:
                             try:
                                 with ZipFile(wd+datafold+filenames[i], 'r') as zipObj:
@@ -426,8 +426,8 @@ def Tick2Rut(ruts,tickers):
                 curr_simil=simil
                 #test_order[i]=b
                 #test_order2[i]=simil
-            #if j==(range2-1) and curr_simil<0.715:
-            #        rut_order[i]= 'ERROR HIGH CHECK MANUALLY= '+str(rut_order[i])    
+            if j==(range2-1) and curr_simil<0.750:
+                    rut_order[i]= 'ERROR HIGH: BANK OR NOT FOUND'   
             #Not checking errors anymore since doesn't have any
             #print(a)
             #print(b)
@@ -440,7 +440,122 @@ def Tick2Rut(ruts,tickers):
     tickers['File']=file_order
     return tickers
 
+def bruteforce_bank_scrap(month,year, month2, year2,update=0):
+    #original link for march 2020 https://www.sbif.cl/sbifweb3/internet/archivos/Info_Fin_7877_19022.zip
+    #From month/year to month2/year2
+
+    month=int(month)
+    year=int(year)
+    month2=int(month2)
+    year2=int(year2)
+    previous_months=(2020-year)*12-((month))+4#We calculate how many months unitl march 2020 and we include march 2020
+    next_months=(year2-2020)*12+((month2))-3 #We calculate how many months from march 2020
+    
+    wd=os.getcwd()
+    datafold='/Data/Chile/Banks/'
+    if not os.path.exists(wd+datafold):
+        os.mkdir(wd+datafold)
+    i=0
+    number_of_files=0
+    name_month=3
+    name_year=2020
+    while number_of_files<previous_months:
+        url='https://www.sbif.cl/sbifweb3/internet/archivos/Info_Fin_7877_'+str(19022-i)+'.zip'
+        i+=1
+        if name_month<10:
+            name_month='0'+str(name_month)
+        else:
+            name_month=str(name_month)
+        filename='Banks_'+name_month+'-'+str(name_year)
+        name_month=int(name_month)
+        name_year=int(name_year)
+        if update!=0 or not os.path.exists(wd+datafold+filename):
+            agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+            myfile = requests.get(url, headers=agent)            
+            page=lh.fromstring(myfile.content)
+            #We obtain every <a and take the URLS to a list
+            test = page.xpath('//h1[contains(@class,"titulo")]')
+            if not test:
+                open(wd+datafold+filename+'.zip', 'wb').write(myfile.content)
+                print('Downloading ' + filename + '...\n')
+                downloaded = 1
+                time.sleep(1)
+                while downloaded!=0:
+                    try:
+                        with ZipFile(wd+datafold+filename+'.zip', 'r') as zipObj:
+                    # Extract all the contents of zip file in different directory
+                            zipObj.extractall(wd+datafold)
+                            downloaded=0
+                    except BadZipfile:
+                        downloaded += 1
+                        print('Still downloading '+' (' +str(downloaded)+' seconds )' + filename + '.zip' +' \n')
+                        time.sleep(5)
+                    if downloaded>12:
+                        print('error downloading ' + filename +'.zip' + 'Please download Manually before executing "allcompanies"')
+                        break
+                number_of_files+=1
+                if name_month>1:
+                    name_month-=1
+                else:
+                    name_month=12
+                    name_year-=1     
+        else:
+            print("Already downloaded "+ wd+datafold+filename + '.zip' + ' and Update not set')
+    ######################################################
+    ### Here the same but for months afrter the 03/2020 
+    ######################################################
+
+    number_of_files=0
+    name_month=4
+    name_year=2020
+    i=1
+    while number_of_files<previous_months:
+        url='https://www.sbif.cl/sbifweb3/internet/archivos/Info_Fin_7877_'+str(19022+i)+'.zip'
+        i+=1
+        if name_month<10:
+            name_month='0'+str(name_month)
+        else:
+            name_month=str(name_month)
+        filename='Banks_'+name_month+'-'+str(name_year)
+        name_month=int(name_month)
+        name_year=int(name_year)
+        if update!=0 or not os.path.exists(wd+datafold+filename+'.zip'):
+            agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+            myfile = requests.get(url, headers=agent)            
+            page=lh.fromstring(myfile.content)
+            #We obtain every <a and take the URLS to a list
+            test = page.xpath('//h1[contains(@class,"titulo")]')
+            if not test:
+                open(wd+datafold+filename+'.zip', 'wb').write(myfile.content)
+                print('Downloading ' + filename + '...\n')
+                downloaded = 1
+                time.sleep(1)
+                while downloaded!=0:
+                    try:
+                        with ZipFile(wd+datafold+filename+'.zip', 'r') as zipObj:
+                    # Extract all the contents of zip file in different directory
+                            zipObj.extractall(wd+datafold)
+                            downloaded=0
+                    except BadZipfile:
+                        downloaded += 1
+                        print('Still downloading '+' (' +str(downloaded)+' seconds )' + filename + '.zip' +' \n')
+                        time.sleep(5)
+                    if downloaded>12:
+                        print('error downloading ' + filename +'.zip' + 'Please download Manually before executing "allcompanies"')
+                        break
+                number_of_files+=1
+                if name_month<12:
+                    name_month+=1
+                else:
+                    name_month=1
+                    name_year+=1     
+        else:
+            print("Already downloaded "+ wd+datafold+filename + '.zip' + ' and Update not set')              
+    print('Finished Download of bank s data')
+
+
 #scrap_mw()
+#bruteforce_bank_scrap('06','2019', '03', '2020')
 
 
 

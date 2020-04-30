@@ -79,7 +79,7 @@ def Prices():
 
 datafold='/Data/Chile/'
 file_name='Database_in_CLP.csv'
-Ticker='COLBUN'
+Ticker='AUSTRALIS'
 
 df=rcl.CL.read_data(file_name,datafold)
 #print(df.loc[:, ['revenue','Date','TICKER']])
