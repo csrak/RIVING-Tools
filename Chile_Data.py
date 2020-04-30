@@ -102,7 +102,7 @@ def download_list(month,year):
     wd=os.getcwd()
     #folder=Path(wd).parent
     #print(folder)
-    file_name='registered_stocks_'+month+'-'+year+'.xls'
+    file_name='Ticker_data/registered_stocks_'+month+'-'+year+'.xls'
     datafold='/Data/Chile/'
     open(wd+datafold+file_name, 'wb').write(myfile.content)
 
@@ -271,7 +271,7 @@ def scrap_rutlist(month,year):
     wd=os.getcwd()
     #folder=Path(wd).parent
     #print(folder)
-    file_name='registered_stocks_'+month+'-'+year+'.csv'
+    file_name='Ticker_data/registered_stocks_'+month+'-'+year+'.csv'
     datafold=wd+'/Data/Chile/'
     df.to_csv(datafold+file_name, index = None, header=True)
 

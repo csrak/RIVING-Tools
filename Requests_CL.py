@@ -130,7 +130,7 @@ def Format_Data(month, year):
 
     #Reads files downloaded from databases
 
-    file_name='registered_stocks_'+month+'-'+year+'.csv'
+    file_name='Ticker_data/registered_stocks_'+month+'-'+year+'.csv'
     datafold='/Data/Chile/'
     ruts=CL.read_data(file_name,datafold)
 
@@ -142,7 +142,7 @@ def Format_Data(month, year):
 
     # Finally saves results 
     wd=os.getcwd()
-    file_name='registered_stocks_TICKER'+month+'-'+year+'.csv'
+    file_name='Ticker_data/registered_stocks_TICKER'+month+'-'+year+'.csv'
     datafold=wd+'/Data/Chile/'
     ruts.to_csv(datafold+file_name, index = None, header=True)
     #Returns results in case of use
@@ -246,7 +246,7 @@ def upandgetem(month1,year1,month2 = 0,year2 = 0,scrap = 0 ):
                         df=CL.read_data(file_name,datafold)
                         get_fillings(month,year,df,datafold,wd)
         elif month2 ==0 and year2==0 :
-            file_name='registered_stocks_TICKER'+month1+'-'+year1+'.csv'
+            file_name='Ticker_data/registered_stocks_TICKER'+month1+'-'+year1+'.csv'
             datafold='/Data/Chile/'
             df=CL.read_data(file_name,datafold)
             get_fillings(month1,year1,df,datafold,wd)
@@ -523,7 +523,7 @@ def all_companies(lista,folder,month,year,update=0,monthup=0,yearup=0):
     #
 
     #datafold='/Data/Chile/'
-    #file_name='registered_stocks_mw.csv'
+    #file_name='Ticker_data/registered_stocks_mw.csv'
     #tick=CL.read_data(file_name,datafold)
     #stocks=[[i,[],[]] for i in tick.loc[:,"Ticker"]]
     #print(stocks)
