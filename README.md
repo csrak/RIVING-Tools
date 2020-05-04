@@ -3,13 +3,13 @@
 
  Needed packages:
 
- lxml
- pandas
- bs4
- unidecode
- tabula-py
- requests
- PyPDF2
- matplotlib
+ lxml  
+ pandas  
+ bs4  
+ unidecode  
+ tabula-py  
+ requests  
+ PyPDF2  
+ matplotlib  
  
  by Avy y Cristian
