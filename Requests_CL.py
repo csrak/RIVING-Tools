@@ -220,9 +220,9 @@ def read_pdf_fil(file_name,datafold):
             print(ix)
     #print(df.loc[3,'Pagos Anticipados'])
     
-def upandgetem(month1,year1,month2 = 0,year2 = 0,scrap = 0 ):
+def upandgetem(month1,year1,month2 = 0,year2 = 0,update = 0 ):
     # Updates tickers, list of companies and then downloads the fillings for the right month and year
-    # scrap can be changed to indicate you do not want to update ticker list, this will speed the process if you already have get the latest tickers
+    # update can be changed to indicate you do not want to update ticker list, this will speed the process if you already have get the latest tickers
     # 
     #e.g.
     #month1='06'  # 03 06 09 12
@@ -232,7 +232,7 @@ def upandgetem(month1,year1,month2 = 0,year2 = 0,scrap = 0 ):
     #if used month1 and month2 is the starting date, and month2 year 2 is the last date to retrieve
     wd=os.getcwd()   
 
-    if scrap == 0 :
+    if update == 0 :
         Update_Data(month1,year1)
     if month1 in months and year1 in years: # check if valid dates
         if month2 in months and year2 in years:
@@ -254,7 +254,10 @@ def upandgetem(month1,year1,month2 = 0,year2 = 0,scrap = 0 ):
            print('Invalid Date 2') 
     else:
         print('Invalid Date 1')
-        
+    if month2 == 0 or year2 == 0:
+        CL.bruteforce_bank_scrap(month,year)
+    else:
+         CL.bruteforce_bank_scrap(month,year, month2, year2)
 
 def read_spec_xblr(param, param2,atparam2, folder):
     # If returns -1 it means not found
@@ -583,11 +586,179 @@ def all_companies(lista,folder,month,year,update=0,monthup=0,yearup=0):
             all_stocks_all_dates.to_csv(folder+file_name, mode = 'a', index = None, header=False)
         except IOError:
             print('Database file '+ file_name + 'does not exist')
+    if monthup == 0 or yearup == 0:
+        all_banks('/Data/Chile/Banks/',month,year)
+    else:
+        all_banks('/Data/Chile/Banks/',month,year, monthup, yearup)
+    
+
+
+def read_bank_txt(datafold,filename,names,mb1,mr1,mc1,curr_type='total'):
+    #With Option curr_type tells you can select which currency you want to consult (always expressed in CLP)
+    # total is default, which is all currencies summed
+    # uf is adjustable by inflation currency
+    # ex1 means national currency but adjustable to foreigner exchange
+    # ex2 means directly foreign currency
+    #filename is year+month as strings
+    #print(mb1)
+    curr_type=curr_type.lower()
+    f_mb1=[]
+    f_mr1=[]
+    f_mc1=[]
+    for name in names:
+        b1=[np.nan]*len(mb1)
+        r1=[np.nan]*len(mr1)
+        c1=[np.nan]*len(mc1)
+        # First for Model B1
+        ##############################################
+        try:
+            df=pd.read_csv(datafold+'b1'+filename+name+'.txt', skiprows=0 ,delimiter='\t',header=0,names=['code','clp', 'uf','ex1','ex2'] ,usecols=['code','clp', 'uf','ex1','ex2'],index_col=False,encoding ='latin1',decimal=',',dtype={'code':str,'clp': np.float64, 'uf': np.float64,'ex1': np.float64,'ex2': np.float64})
+            cod_in_fill=df['code'].tolist()
+            if curr_type=='total':
+                clp_in_fill=df['clp'].tolist()
+                uf_in_fill=df['uf'].tolist()
+                ex1_in_fill=df['ex1'].tolist()
+                ex2_in_fill=df['ex2'].tolist()
+                selected=[(clp_in_fill[i]+uf_in_fill[i]+ex1_in_fill[i]+ex2_in_fill[i])*1000000 for i in range(len(cod_in_fill))] #The amounts are in millions of CLP in the files so we multiply
+            else:
+                try:
+                    selected=df[curr_type].tolist()
+                    selected=[select*1000000 for select in selected]
+                except KeyError:
+                    print('Please enter a valid curr_type (clp, uf, ex1, ex2) or leave the default for a calculation of the total')
+                    print('------------------------------------------------------------------------------------------------------')
+                    return    
+            for i in range(len(selected)):
+                try:
+                    ix=mb1.index(cod_in_fill[i])
+                    b1[ix]=selected[i]
+                except ValueError:
+                    print(str(cod_in_fill[i])+' Not Found')
+                    continue
+            f_mb1.append(b1)
+        except FileNotFoundError:
+            print('Corrupt filename (format problem):')
+            print(datafold+'b1'+filename+name+'.txt')
+        # Then for Model R1
+        ##############################################
+        try:
+            df=pd.read_csv(datafold+'r1'+filename+name+'.txt', skiprows=0 ,delimiter='\t',header=0,names=['code','clp', 'uf','ex1','ex2'] ,usecols=['code','clp', 'uf','ex1','ex2'],index_col=False,encoding ='latin1',decimal=',',dtype={'code':str,'clp': np.float64, 'uf': np.float64,'ex1': np.float64,'ex2': np.float64})
+            cod_in_fill=df['code'].tolist()
+            if curr_type=='total':
+                clp_in_fill=df['clp'].tolist()
+                uf_in_fill=df['uf'].tolist()
+                ex1_in_fill=df['ex1'].tolist()
+                ex2_in_fill=df['ex2'].tolist()
+                selected=[(clp_in_fill[i]+uf_in_fill[i]+ex1_in_fill[i]+ex2_in_fill[i])*1000000 for i in range(len(cod_in_fill))]
+            else:
+                try:
+                    selected=df[curr_type].tolist()
+                    selected=[select*1000000 for select in selected]
+                except KeyError:
+                    print('Please enter a valid curr_type (clp, uf, ex1, ex2) or leave the default for a calculation of the total')
+                    print('------------------------------------------------------------------------------------------------------')
+                    return    
+            for i in range(len(selected)):
+                try:
+                    ix=mr1.index(cod_in_fill[i])
+                    r1[ix]=selected[i]
+                except ValueError:
+                    #print(str(cod_in_fill[i])+' Not Found')
+                    continue
+            f_mr1.append(r1)
+        except FileNotFoundError:
+            print('Corrupt filename (formatting problem):')
+            print(datafold+'b1'+filename+name+'.txt')
+            # Then for Model C1
+            ##############################################
+        try:
+            df=pd.read_csv(datafold+'c1'+filename+name+'.txt', skiprows=0 ,delimiter='\t',header=0,names=['code','total'] ,usecols=['code','total'],index_col=False,encoding ='latin1',decimal=',',dtype={'code':str,'total': np.float64})
+            cod_in_fill=df['code'].tolist()
+            if curr_type=='clp':
+                curr_type='total'
+            try:
+                selected=df[curr_type].tolist()
+                selected=[select*1000000 for select in selected]
+            except KeyError:
+                print('Model C1 not included due to being only in CLP')
+                continue
+            for i in range(len(selected)):
+                try:
+                    ix=mc1.index(cod_in_fill[i])
+                    c1[ix]=selected[i]
+                except ValueError:
+                    #print(str(cod_in_fill[i])+' Not Found')
+                    continue
+            f_mc1.append(c1)
+        except FileNotFoundError:
+            print('Corrupt filename (formatting problem):')
+            print(datafold+'b1'+filename+name+'.txt')
+        #print(b1)
+    return f_mb1,f_mr1,f_mc1
+        
+
+def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0):
+    wd=os.getcwd()
+    month=int(month)
+    year=int(year)
+    monthup=int(monthup)
+    yearup=int(yearup)
+    if not os.path.exists(wd+folder+'Tickers/'):
+        os.mkdir(wd+folder+'Tickers/')
+    previous_months=(yearup-year)*12-((month))+monthup+1 #We calculate how many months 
+    name_month=int(monthup)
+    name_year=int(yearup)
+    final_df=[]
+    for i in range(previous_months):
+        if name_month<10:
+            name_month='0'+str(name_month)      
+        filename=str(name_year)+str(name_month)
+        if glob.glob(wd+folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/b1*'):
+            print('...')    
+        else:
+            datafold=glob.glob(wd+folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/'+'*')[0]+'/'
+            print(datafold)
+        name_month=int(name_month)
+        if name_month>1:
+            name_month-=1
+        else:
+            name_month=12
+            name_year-=1  
+        names,mb1,mr1,mc1=CL.get_bank_tickers(datafold)
+        if ticktofile!=0: #If the option to print the tickers to files is enabled we print monthly tickers
+            df=df = pd.DataFrame(columns=['ticker','codes'])
+            df['ticker']=names[0]
+            df['codes']=names[1]
+            df.to_csv(wd+folder+'Tickers/'+'Tickers_'+filename, index = None, header=True)
+        b1,r1,c1=read_bank_txt(datafold,filename,names[1],mb1[1],mr1[1],mc1[1])
+        #Now we change the lit of lists to pandas dataframe, rearranging first to coincide iwth pandas formatting
+        final_list=[]
+        for i in range(len(b1)):
+            c1[i].append(names[0][i])
+            c1[i].append(filename)
+            final_list.append(b1[i]+r1[i]+c1[i])
+        mb1[0]=[m.lower() for m in mb1[0]]
+        mr1[0]=[m.lower() for m in mr1[0]]
+        mc1[0]=[m.lower() for m in mc1[0]]
+        df=pd.DataFrame(final_list,columns=mb1[0]+mr1[0]+mc1[0]+['ticker','date'])
+        df = df.loc[:,~df.columns.duplicated()]
+        if b1 or r1:
+            final_df.append(df)
+    df1=pd.DataFrame()
+    df1=df1.append(final_df)
+    if name_month<10:
+        name_month='0'+str(name_month) 
+    df_col=pd.DataFrame(data={'balance':mb1[0]})
+    df_col2=pd.DataFrame(data={'result':mr1[0]})
+    df_col=pd.concat([df_col,df_col2], ignore_index=True, axis=1)
+    df_col2=pd.DataFrame(data={'complementary':mc1[0]})  
+    df_col=pd.concat([df_col,df_col2], ignore_index=True, axis=1)
+    df_col.to_csv(wd+folder+'bank_parameters_since_'+str(month)+'-'+str(year)+'.csv', index = None, header=True)
+    df1.to_csv(wd+folder+'bank_database_since_'+str(month)+'-'+str(year)+'.csv', index = None, header=True)
 
 
 
-
-
+#all_banks('/Data/Chile/Banks/','03','2012', '03', '2020')
 #Update_Data('03','2013')
 #upandgetem('03','2013')
 #upandgetem('06','2013')

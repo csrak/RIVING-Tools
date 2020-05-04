@@ -1,5 +1,6 @@
 import requests
 import time
+import glob
 import lxml.html as lh
 import pandas as pd
 import os
@@ -12,6 +13,7 @@ from zipfile import BadZipfile
 import tabula #install tabula-py
 import PyPDF2
 import unidecode
+from datetime import datetime
 ###
 #####
 ###### 
@@ -19,7 +21,8 @@ import unidecode
 #       Specifically for importing data from chilean stocks, into csv file, mostly into ~/data/chile/ folder
 
 
-
+MAXMONTHS=100 # Number maximum of empty urls in between monthly fillings, used to stop checking if user tries to obtain 
+              # dates that do not exist
 
 def getIndexes(dfObj, value):
     #''' Get index positions of value in dataframe i.e. dfObj.'''
@@ -440,17 +443,39 @@ def Tick2Rut(ruts,tickers):
     tickers['File']=file_order
     return tickers
 
-def bruteforce_bank_scrap(month,year, month2, year2,update=0):
+
+def tick2code(names): # We search for the tickers corresponding to the banks and obtain the IFI Code of each
+    #If the ticker is not found we leave the institution name as the ticker for completeness purposes
+    df=read_data('registered_stocks.csv','/Data/Chile/')
+    tickers=[df['Ticker'].tolist(),df['Name'].tolist()]
+    for i in range(len(names[0])):
+        for j in range(len(tickers[0])): 
+            #print('name')       
+            #print(names[0][i])
+            if SequenceMatcher(None, tickers[1][j].lower(), names[0][i].lower()).ratio()>0.8:#They are usually the same, but we put 0.8 just in case     
+                names[0][i]=tickers[0][j]
+                #print('found ticker') 
+                #print(tickers[0][j])
+                break
+    return names
+
+
+            
+
+
+def bruteforce_bank_scrap(month,year, month2='03', year2='2020',update=0):
     #original link for march 2020 https://www.sbif.cl/sbifweb3/internet/archivos/Info_Fin_7877_19022.zip
     #From month/year to month2/year2
-
+    if int(str(datetime.now())[0:4])<int(year2) or (int(str(datetime.now())[0:4])==int(year2) and int(str(datetime.now())[5:7])<=(int(month2)-2)):
+        print('The date solicited is too recent, please put another date or download the last month manually')
+        return
     month=int(month)
     year=int(year)
     month2=int(month2)
     year2=int(year2)
     previous_months=(2020-year)*12-((month))+4#We calculate how many months unitl march 2020 and we include march 2020
     next_months=(year2-2020)*12+((month2))-3 #We calculate how many months from march 2020
-    
+    print(previous_months)
     wd=os.getcwd()
     datafold='/Data/Chile/Banks/'
     if not os.path.exists(wd+datafold):
@@ -459,22 +484,23 @@ def bruteforce_bank_scrap(month,year, month2, year2,update=0):
     number_of_files=0
     name_month=3
     name_year=2020
-    while number_of_files<previous_months:
+    while number_of_files<previous_months and i<MAXMONTHS*previous_months:
         url='https://www.sbif.cl/sbifweb3/internet/archivos/Info_Fin_7877_'+str(19022-i)+'.zip'
         i+=1
         if name_month<10:
-            name_month='0'+str(name_month)
+            stname_month='0'+str(name_month)
         else:
-            name_month=str(name_month)
-        filename='Banks_'+name_month+'-'+str(name_year)
+            stname_month=str(name_month)
+        filename='Banks_'+stname_month+'-'+str(name_year)
         name_month=int(name_month)
         name_year=int(name_year)
-        if update!=0 or not os.path.exists(wd+datafold+filename):
+        if update==0 or not os.path.exists(wd+datafold+filename):
             agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
             myfile = requests.get(url, headers=agent)            
             page=lh.fromstring(myfile.content)
             #We obtain every <a and take the URLS to a list
             test = page.xpath('//h1[contains(@class,"titulo")]')
+            #print(test)
             if not test:
                 open(wd+datafold+filename+'.zip', 'wb').write(myfile.content)
                 print('Downloading ' + filename + '...\n')
@@ -482,10 +508,20 @@ def bruteforce_bank_scrap(month,year, month2, year2,update=0):
                 time.sleep(1)
                 while downloaded!=0:
                     try:
+                        print(wd+datafold+filename+'.zip')
                         with ZipFile(wd+datafold+filename+'.zip', 'r') as zipObj:
                     # Extract all the contents of zip file in different directory
-                            zipObj.extractall(wd+datafold)
+                            if not os.path.exists(wd+datafold+filename+'/'):                                
+                                os.mkdir(wd+datafold+filename+'/')
+                            zipObj.extractall(wd+datafold+filename+'/')
+                            number_of_files+=1
+                            if name_month>1:
+                                name_month-=1
+                            else:
+                                name_month=12
+                                name_year-=1  
                             downloaded=0
+                            strip_spaces(wd+datafold+filename+'/')
                     except BadZipfile:
                         downloaded += 1
                         print('Still downloading '+' (' +str(downloaded)+' seconds )' + filename + '.zip' +' \n')
@@ -493,38 +529,39 @@ def bruteforce_bank_scrap(month,year, month2, year2,update=0):
                     if downloaded>12:
                         print('error downloading ' + filename +'.zip' + 'Please download Manually before executing "allcompanies"')
                         break
-                number_of_files+=1
-                if name_month>1:
-                    name_month-=1
-                else:
-                    name_month=12
-                    name_year-=1     
+   
         else:
-            print("Already downloaded "+ wd+datafold+filename + '.zip' + ' and Update not set')
+            print("Already downloaded "+ wd+datafold+filename +  '/' + filename+ '.zip' + ' and Update not set')
+            if name_month>1:
+                name_month-=1
+            else:
+                name_month=12
+                name_year-=1  
     ######################################################
     ### Here the same but for months afrter the 03/2020 
     ######################################################
-
+    
     number_of_files=0
     name_month=4
     name_year=2020
     i=1
-    while number_of_files<previous_months:
+    while number_of_files<next_months and i<MAXMONTHS*next_months:
         url='https://www.sbif.cl/sbifweb3/internet/archivos/Info_Fin_7877_'+str(19022+i)+'.zip'
         i+=1
         if name_month<10:
-            name_month='0'+str(name_month)
+            stname_month='0'+str(name_month)
         else:
-            name_month=str(name_month)
-        filename='Banks_'+name_month+'-'+str(name_year)
+            stname_month=str(name_month)        
+        filename='Banks_'+stname_month+'-'+str(name_year)
         name_month=int(name_month)
         name_year=int(name_year)
-        if update!=0 or not os.path.exists(wd+datafold+filename+'.zip'):
+        if update==0 or not os.path.exists(wd+datafold+filename+'.zip'):
             agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
             myfile = requests.get(url, headers=agent)            
             page=lh.fromstring(myfile.content)
             #We obtain every <a and take the URLS to a list
             test = page.xpath('//h1[contains(@class,"titulo")]')
+            #print(test)
             if not test:
                 open(wd+datafold+filename+'.zip', 'wb').write(myfile.content)
                 print('Downloading ' + filename + '...\n')
@@ -532,10 +569,20 @@ def bruteforce_bank_scrap(month,year, month2, year2,update=0):
                 time.sleep(1)
                 while downloaded!=0:
                     try:
+                        print(wd+datafold+filename+'.zip')
                         with ZipFile(wd+datafold+filename+'.zip', 'r') as zipObj:
                     # Extract all the contents of zip file in different directory
-                            zipObj.extractall(wd+datafold)
+                            if not os.path.exists(wd+datafold+filename+'/'):                                
+                                os.mkdir(wd+datafold+filename+'/')
+                            zipObj.extractall(wd+datafold+filename+'/')
+                            number_of_files+=1
+                            if name_month<12:
+                                name_month+=1
+                            else:
+                                name_month=1
+                                name_year+=1 
                             downloaded=0
+                            strip_spaces(wd+datafold+filename+'/')
                     except BadZipfile:
                         downloaded += 1
                         print('Still downloading '+' (' +str(downloaded)+' seconds )' + filename + '.zip' +' \n')
@@ -543,19 +590,137 @@ def bruteforce_bank_scrap(month,year, month2, year2,update=0):
                     if downloaded>12:
                         print('error downloading ' + filename +'.zip' + 'Please download Manually before executing "allcompanies"')
                         break
-                number_of_files+=1
-                if name_month<12:
-                    name_month+=1
-                else:
-                    name_month=1
-                    name_year+=1     
         else:
-            print("Already downloaded "+ wd+datafold+filename + '.zip' + ' and Update not set')              
+            print("Already downloaded "+ wd+datafold+filename + '.zip' + ' and Update not set')  
+            if name_month<12:
+                name_month+=1
+            else:
+                name_month=1
+                name_year+=1 
+
     print('Finished Download of bank s data')
 
 
+def read_bank_codes(datafold):
+    #First we read the codes for the names of the banks
+    ####################################################
+    ####################################################
+    try:
+        df=pd.read_csv(datafold+'Instrucciones/CODIFIS.TXT', skiprows=3 ,delimiter='\t',index_col=False ,encoding ='latin1')       
+    except pd.errors.ParserError:
+        wd=os.getcwd()        
+        df=pd.read_csv(wd+'/Data/Chile/Banks/Banks_03-2020/202003-290420/Instrucciones/CODIFIS.TXT', skiprows=3 ,delimiter='\t',index_col=False ,encoding ='latin1')
+    except FileNotFoundError:
+        df=pd.read_csv(datafold+'Instrucciones/Instrucciones/CODIFIS.TXT', skiprows=3 ,delimiter='\t',index_col=False ,encoding ='latin1')
+    codes=df['COD. IFI'].tolist()
+    names=df['RAZON SOCIAL'].tolist()
+    names=[(name.replace('(','')).replace(')','') for name in names if name==name]
+    for i in range(len(names)):
+        numbinnames=[s for s in names[i].split() if s.isdigit()]
+        for numb in numbinnames:
+            names[i]=names[i].replace(numb,'')
+    codes=codes[:len(names)]
+    codes.pop(-1)
+    names.pop(-1)
+    names=[names,codes]
+    ####
+    #Then we read the codes of the bank actives in MB1 file (Consolidated Monthly Balance file)
+    ####################################################
+    ####################################################
+    df=pd.read_csv(datafold+'Instrucciones/Modelo-MB1.TXT', skiprows=1 ,delimiter='\t',header=0,names=['code', 'parameter'] ,usecols=['code', 'parameter'],index_col=False,encoding ='latin1')       
+    #print(df['code'])
+    #print(df['parameter'])
+    codes=df['code'].tolist()
+    parameter=df['parameter'].tolist()
+    n=len(parameter)
+    for j in range(n):
+        i=n-1-j
+        if parameter[i]==parameter[i] and codes[i]==codes[i]:
+            #print(parameter[i])
+            parameter[i]=parameter[i].strip()
+            codes[i]=str(codes[i]).strip()
+        else:
+            #print(parameter[i])
+            parameter.pop(i)
+            codes.pop(i)
+    parameter=[unidecode.unidecode(((para.replace('(','')).replace(')','')).replace('*','')) for para in parameter]
+    codes=[code.strip() for code in codes]
+    mb1=[parameter,codes]
+        ####
+    #Then we read the codes of the bank actives in MR1 file (Consolidated Monthly Results file)
+    ####################################################
+    ####################################################
+    df=pd.read_csv(datafold+'Instrucciones/Modelo-MR1.TXT', skiprows=1 ,delimiter='\t',header=0,names=['code', 'parameter'] ,usecols=['code', 'parameter'],index_col=False,encoding ='latin1')       
+    #print(df['code'])
+    #print(df['parameter'])
+    codes=df['code'].tolist()
+    parameter=df['parameter'].tolist()
+    n=len(parameter)
+    for j in range(n):
+        i=n-1-j
+        if parameter[i]==parameter[i] and codes[i]==codes[i]:
+            #print(parameter[i])
+            parameter[i]=parameter[i].strip()
+            codes[i]=str(codes[i]).strip()
+        else:
+            #print(parameter[i])
+            parameter.pop(i)
+            codes.pop(i)
+    parameter=[unidecode.unidecode(((para.replace('(','')).replace(')','')).replace('*','')) for para in parameter]
+    codes=[code.strip() for code in codes]
+    mr1=[parameter,codes]
+    df=pd.read_csv(datafold+'Instrucciones/Modelo-MC1.TXT', skiprows=1 ,delimiter='\t',header=0,names=['code', 'parameter'] ,usecols=['code', 'parameter'],index_col=False,encoding ='latin1')       
+    #print(df['code'])
+    #print(df['parameter'])
+    codes=df['code'].tolist()
+    parameter=df['parameter'].tolist()
+    n=len(parameter)
+    for j in range(n):
+        i=n-1-j
+        if parameter[i]==parameter[i] and codes[i]==codes[i]:
+            #print(parameter[i])
+            parameter[i]=parameter[i].strip()
+            codes[i]=str(codes[i]).strip()
+        else:
+            #print(parameter[i])
+            parameter.pop(i)
+            codes.pop(i)
+    parameter=[unidecode.unidecode(((para.replace('(','')).replace(')','')).replace('*','')) for para in parameter]
+    codes=[code.strip() for code in codes]
+    mc1=[parameter,codes]
+    return names,mb1,mr1,mc1
+
+    #return names
+
+def get_bank_tickers(datafold):
+    names,mb1,mr1,mc1=read_bank_codes(datafold)
+    names=tick2code(names)
+    return names,mb1,mr1,mc1
+
+
+def strip_spaces(datafold):
+    #print(datafold + "/**/*.txt")
+    #print(glob.glob(datafold + "/**/*.txt", recursive=True))
+    print('Formating files ...')
+    for files in glob.glob(datafold + "/**/*.txt", recursive=True):
+        #print(files)
+        clean_lines = []
+        with open(files, "r", encoding='latin1') as f:
+            lines = f.readlines()
+            clean_lines = [(l.strip()).strip('\t') for l in lines if l.strip()]
+        with open(files, "w", encoding='latin1') as f:
+            f.writelines('\n'.join(clean_lines))
+
+
+
+#def 
+#get_bank_tickers(datafold,filename)
+
 #scrap_mw()
-#bruteforce_bank_scrap('06','2019', '03', '2020')
+#bruteforce_bank_scrap('03','2012', '03', '2020')
+
+
+
 
 
 
