@@ -668,7 +668,7 @@ def read_bank_txt(datafold,filename,names,mb1,mr1,mc1,curr_type='total'):
             f_mr1.append(r1)
         except FileNotFoundError:
             print('Corrupt filename (formatting problem):')
-            print(datafold+'b1'+filename+name+'.txt')
+            print(datafold+'r1'+filename+name+'.txt')
             # Then for Model C1
             ##############################################
         try:
@@ -692,11 +692,21 @@ def read_bank_txt(datafold,filename,names,mb1,mr1,mc1,curr_type='total'):
             f_mc1.append(c1)
         except FileNotFoundError:
             print('Corrupt filename (formatting problem):')
-            print(datafold+'b1'+filename+name+'.txt')
+            print(datafold+'c1'+filename+name+'.txt')
         #print(b1)
     return f_mb1,f_mr1,f_mc1
         
-
+def duplicated_varnames(df):
+    repeat_dict = {}
+    var_list = list(df) # list of varnames as strings
+    for varname in var_list:
+        # make a list of all instances of that varname
+        test_list = [v for v in var_list if v == varname] 
+        # if more than one instance, report duplications in repeat_dict
+        if len(test_list) > 1: 
+            repeat_dict[varname] = len(test_list)
+    return repeat_dict
+    
 def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0):
     wd=os.getcwd()
     month=int(month)
@@ -706,6 +716,8 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
     if not os.path.exists(wd+folder+'Tickers/'):
         os.mkdir(wd+folder+'Tickers/')
     previous_months=(yearup-year)*12-((month))+monthup+1 #We calculate how many months 
+    print('months')
+    print(previous_months)
     name_month=int(monthup)
     name_year=int(yearup)
     final_df=[]
@@ -714,10 +726,15 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
             name_month='0'+str(name_month)      
         filename=str(name_year)+str(name_month)
         if glob.glob(wd+folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/b1*'):
-            print('...')    
+            datafold=wd+folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/'
+            print('c1 %s',datafold)    
         else:
-            datafold=glob.glob(wd+folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/'+'*')[0]+'/'
-            print(datafold)
+            try:
+                datafold=glob.glob(wd+folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/'+'*')[0]+'/'
+                print('c2 %s',datafold)   
+            except IndexError:
+                print(str(name_month)+' Month noth found at year '+ str(name_year))
+                continue
         name_month=int(name_month)
         if name_month>1:
             name_month-=1
@@ -725,6 +742,14 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
             name_month=12
             name_year-=1  
         names,mb1,mr1,mc1=CL.get_bank_tickers(datafold)
+        repeated=['5001000','5002000','5100000','1270000','1800000','2100000']
+        for cd in repeated:
+            try:
+                ix=mr1[1].index(cd)
+                mr1[0].pop(ix)
+                mr1[1].pop(ix)
+            except ValueError:
+                pass
         if ticktofile!=0: #If the option to print the tickers to files is enabled we print monthly tickers
             df=df = pd.DataFrame(columns=['ticker','codes'])
             df['ticker']=names[0]
@@ -737,12 +762,12 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
             c1[i].append(names[0][i])
             c1[i].append(filename)
             final_list.append(b1[i]+r1[i]+c1[i])
-        mb1[0]=[m.lower() for m in mb1[0]]
-        mr1[0]=[m.lower() for m in mr1[0]]
-        mc1[0]=[m.lower() for m in mc1[0]]
-        df=pd.DataFrame(final_list,columns=mb1[0]+mr1[0]+mc1[0]+['ticker','date'])
-        df = df.loc[:,~df.columns.duplicated()]
+        df=pd.DataFrame(final_list,columns=mb1[1]+mr1[1]+mc1[1]+['ticker','date'])
+        #df = df.loc[:,~df.columns.duplicated()]
+        print(duplicated_varnames(df))
         if b1 or r1:
+            print(filename)
+            df=df.dropna(axis=1, how='all')            
             final_df.append(df)
     df1=pd.DataFrame()
     df1=df1.append(final_df)
@@ -758,7 +783,7 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
 
 
 
-#all_banks('/Data/Chile/Banks/','03','2012', '03', '2020')
+#all_banks('/Data/Chile/Banks/','11','2012', '03', '2020')
 #Update_Data('03','2013')
 #upandgetem('03','2013')
 #upandgetem('06','2013')
@@ -772,7 +797,7 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
 #upandgetem('06','2015')
 #upandgetem('09','2015')
 #upandgetem('12','2015')
-##upandgetem('03','2016')
+#upandgetem('03','2016')
 #upandgetem('06','2016')
 #upandgetem('09','2016')
 #upandgetem('12','2016')

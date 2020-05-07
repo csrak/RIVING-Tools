@@ -78,7 +78,7 @@ def search_date(month,year,df,ticker):
     return a,a+1
 
 
-def date_range_gen(min,max):
+def date_range_gen(min,max,op='a'):
 	iyear=min//100
 	imonth=min-iyear*100
 	fyear=max//100
@@ -88,23 +88,66 @@ def date_range_gen(min,max):
 	month=imonth
 	#print(year)
 	#print(month)
-	while True:				
-		datelist.append(year*100+month)
-		if month==fmonth and year==fyear:
-			break
-		month=month+3
-		if not month<=12:
-			year=year+1
-			month=3
+	if op=='a':
+		while True:				
+			datelist.append(year*100+month)
+			if month==fmonth and year==fyear:
+				break
+			month=month+3
+			if not month<=12:
+				year=year+1
+				month=3
+	elif op=='b':
+		while True:				
+			datelist.append(year*100+month)
+			if month==fmonth and year==fyear:
+				break
+			month=month+1
+			if not month<=12:
+				year=year+1
+				month=1
 	return datelist
 
 #Returns list of data searched ordered by date
 #Returns lists of dates
 #If data not found for date data is NaN
+def bank_list_by_date(ticker, data,df,month,year):
+	#data=data.lower()
+	#df_par=rcl.CL.read_data('bank_parameters_since_'+str(month)+'-'+str(year)+'.csv','/Data/Chile/Banks/')
+	#params=df_par['0'].tolist()+df_par['1'].tolist()+df_par['2'].tolist()
+	#if data not in [a.lower() for a in params]:
+	#	print('Current available parameters:\n')
+	#	print(*params, sep='\n')
+	#	raise SystemExit('Please select a parameter from the available database') 
+	df=df.loc[df['ticker']==ticker]
+	df=df.loc[:,[data,'ticker','date']]
+	datelist=df['date'].tolist()
+	if len(datelist)==0:
+		return [data],[]
+	datelist=[int(i) for i in datelist]
+	dmax=max(datelist)
+	dmin=min(datelist)
+	datelist=date_range_gen(dmin,dmax,'b')
+	datas=[]
+	datas.append(data)
+	for i in range(len(datelist)):
+		check=0
+		for j in range(len(df)):
+			if df.iloc[j]['date']==str(datelist[i]):
+				temp=float(df.iloc[j][data])
+				datas.append(temp)
+				check=1
+		if check==0:
+				datas.append(np.nan)
+	return datas,datelist
 
-def list_by_date(ticker, data,df): #Asks for ticker, name of data column and the dataframe after cutting 3rd row
+def list_by_date(ticker, data,df,month=0,year=0): 
+	#month and year are used only for indicating bak database to be used, should not be set for rest of databases
+	#Asks for ticker, name of data column and the dataframe after cutting 3rd row
 	#Returns list with element 0 being the name of the data, and the ret being the data
 	#Also returns list of dates, both in same order
+	if month!=0 or year!=0:
+		return bank_list_by_date(ticker, data,df,month,year)
 	data=rcl.check_parameter(data)
     #col= df.loc[:, [data,'Date','TICKER']]	
 	datelist=[]
@@ -291,18 +334,24 @@ def CCO(): #W.I.P
 #############
 #Testing how pandas and the table works
 
-#datafold='/Data/Chile/'
-#file_name='Database_Chile_Since_03-2013.csv'
+datafold='/Data/Chile/Banks/'
+file_name='bank_database_since_11-2012.csv'
 
-#df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
+df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
 #start=time.time()
 #df = all_CLP(df)
 #print(time.time()-start)
 
-#tickers='ATSA'
-#datas,datelist=list_by_date(tickers,'net profit',df)
-#print(datas)
-#print(datelist)
+tickers='BSANTANDER'
+datas,datelist=list_by_date(tickers,'1000000',df,12,2012)
+datas2,datelist=list_by_date(tickers,'2000000',df,12,2012)
+print(datas)
+print(datelist)
+plot_data_time(datelist,datas,datas2)
+datas,datelist=list_by_date(tickers,'1309100',df,12,2012)
+print(datas)
+print(datelist)
+plot_data_time(datelist,datas)
 #datas2,datelist=list_by_date(tickers,'liabilities',df)
 #print(datelist)
 #plot_data_time(datelist,datas,datas2)

@@ -14,6 +14,7 @@ import tabula #install tabula-py
 import PyPDF2
 import unidecode
 from datetime import datetime
+import shutil
 ###
 #####
 ###### 
@@ -514,14 +515,20 @@ def bruteforce_bank_scrap(month,year, month2='03', year2='2020',update=0):
                             if not os.path.exists(wd+datafold+filename+'/'):                                
                                 os.mkdir(wd+datafold+filename+'/')
                             zipObj.extractall(wd+datafold+filename+'/')
-                            number_of_files+=1
-                            if name_month>1:
-                                name_month-=1
+                            if glob.glob(wd+datafold+filename+'/'+str(name_year)+stname_month+'*'):                                    
+                                number_of_files+=1
+                                if name_month>1:
+                                    name_month-=1
+                                else:
+                                    name_month=12
+                                    name_year-=1  
+                                strip_spaces(wd+datafold+filename+'/')
                             else:
-                                name_month=12
-                                name_year-=1  
+                                try:
+                                    shutil.rmtree(wd+datafold+filename+'/')
+                                except OSError as e:
+                                    print ("Error: %s - %s." % (e.filename, e.strerror))
                             downloaded=0
-                            strip_spaces(wd+datafold+filename+'/')
                     except BadZipfile:
                         downloaded += 1
                         print('Still downloading '+' (' +str(downloaded)+' seconds )' + filename + '.zip' +' \n')
@@ -575,14 +582,20 @@ def bruteforce_bank_scrap(month,year, month2='03', year2='2020',update=0):
                             if not os.path.exists(wd+datafold+filename+'/'):                                
                                 os.mkdir(wd+datafold+filename+'/')
                             zipObj.extractall(wd+datafold+filename+'/')
-                            number_of_files+=1
-                            if name_month<12:
-                                name_month+=1
+                            if glob.glob(wd+datafold+filename+'/'+str(name_year)+stname_month+'*'):   
+                                number_of_files+=1
+                                if name_month<12:
+                                    name_month+=1
+                                else:
+                                    name_month=1
+                                    name_year+=1                                 
+                                strip_spaces(wd+datafold+filename+'/')
                             else:
-                                name_month=1
-                                name_year+=1 
+                                try:
+                                    shutil.rmtree(wd+datafold+filename+'/')
+                                except OSError as e:
+                                    print ("Error: %s - %s." % (e.filename, e.strerror))
                             downloaded=0
-                            strip_spaces(wd+datafold+filename+'/')
                     except BadZipfile:
                         downloaded += 1
                         print('Still downloading '+' (' +str(downloaded)+' seconds )' + filename + '.zip' +' \n')
