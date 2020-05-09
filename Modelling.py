@@ -55,7 +55,7 @@ def basic_dcf(ticker,df):
 	fit = np.polyfit(count, growth, 1)
 	print('Fit')
 	print(fit)
-	value=opcash*(1+fit[0]/growth[-1])**10+cash[-1]-liabilities[-1]
+	value=growth[-1]+(fit[0])*10+cash[-1]-liabilities[-1]
 	value=value/((1+(rate/100))**10)
 	value=value/shares
 	#print("right value = "+ str(value*20))
@@ -79,7 +79,7 @@ def model_all_0(df):
 datafold='/Data/Chile/'
 file_name='Database_in_CLP.csv'
 df=rcl.CL.read_data(file_name,datafold)
-#model_all_0(df)
+model_all_0(df)
 
 
 ############################ Ignore everything under ths line

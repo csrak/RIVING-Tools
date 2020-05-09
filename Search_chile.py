@@ -334,24 +334,24 @@ def CCO(): #W.I.P
 #############
 #Testing how pandas and the table works
 
-datafold='/Data/Chile/Banks/'
-file_name='bank_database_since_11-2012.csv'
+#datafold='/Data/Chile/Banks/'
+#file_name='bank_database_since_11-2012.csv'
 
-df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
+#df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
 #start=time.time()
 #df = all_CLP(df)
 #print(time.time()-start)
 
-tickers='BSANTANDER'
-datas,datelist=list_by_date(tickers,'1000000',df,12,2012)
-datas2,datelist=list_by_date(tickers,'2000000',df,12,2012)
-print(datas)
-print(datelist)
-plot_data_time(datelist,datas,datas2)
-datas,datelist=list_by_date(tickers,'1309100',df,12,2012)
-print(datas)
-print(datelist)
-plot_data_time(datelist,datas)
+#tickers='BSANTANDER'
+#datas,datelist=list_by_date(tickers,'1000000',df,12,2012)
+#datas2,datelist=list_by_date(tickers,'2000000',df,12,2012)
+#print(datas)
+#print(datelist)
+#plot_data_time(datelist,datas,datas2)
+#datas,datelist=list_by_date(tickers,'1309100',df,12,2012)
+#print(datas)
+#print(datelist)
+#plot_data_time(datelist,datas)
 #datas2,datelist=list_by_date(tickers,'liabilities',df)
 #print(datelist)
 #plot_data_time(datelist,datas,datas2)
