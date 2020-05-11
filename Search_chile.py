@@ -337,6 +337,10 @@ def CCO(): #W.I.P
 #datafold='/Data/Chile/Banks/'
 #file_name='bank_database_since_11-2012.csv'
 
+
+#datafold='/Data/Chile/'
+#file_name='Database_Chile_Since_03-2013.csv'
+
 #df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
 #start=time.time()
 #df = all_CLP(df)

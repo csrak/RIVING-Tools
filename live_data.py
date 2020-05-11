@@ -38,7 +38,7 @@ def mw_quote_CL(ticker): #Obtain quote from marketwatch finance
 
 
 def yahoo_quote_CL(ticker): #Obtain quote from yahoo finance
-    ticker2=ticker+'.SN'
+    ticker2=ticker.replace(' ','')+'.SN'
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = "http://finance.yahoo.com/quote/%s?p=%s"%(ticker2,ticker2)
     response = requests.get(url, headers=agent,verify=False)
@@ -51,7 +51,7 @@ def yahoo_quote_CL(ticker): #Obtain quote from yahoo finance
         quote=float(summary_table[0].replace(',',''))
     return quote
 def yahoo_quoteA_CL(ticker): #Obtain quote from yahoo finance
-    ticker2=ticker+'-A.SN'
+    ticker2=ticker.replace(' ','')+'-A.SN'
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = "http://finance.yahoo.com/quote/%s?p=%s"%(ticker2,ticker2)
     response = requests.get(url, headers=agent,verify=False)
@@ -98,7 +98,7 @@ def barron_quoteA_CL(ticker): #Obtain quote from yahoo finance
     
     
 def barron_quote_CL(ticker): #Obtain quote from yahoo finance
-    
+    ticker=ticker.replace(' ','')
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = "https://www.barrons.com/quote/stock/cl/xsgo/"+ticker
     response = requests.get(url, headers=agent,verify=False)

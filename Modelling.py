@@ -51,7 +51,7 @@ def basic_dcf(ticker,df):
 	#growth=np.mean(growth)
 	count=list(range(len(growth)))
 	if len(growth)<2:
-		return [ticker,'Not Found',str(quote)]
+		return [ticker,np.nan,str(quote)]
 	fit = np.polyfit(count, growth, 1)
 	print('Fit')
 	print(fit)
@@ -75,12 +75,12 @@ def model_all_0(df):
 
 
 
-
+ticker='AESGENER'
 datafold='/Data/Chile/'
 file_name='Database_in_CLP.csv'
 df=rcl.CL.read_data(file_name,datafold)
 model_all_0(df)
-
+print(basic_dcf(ticker,df))
 
 ############################ Ignore everything under ths line
 ticker='AUSTRALIS'

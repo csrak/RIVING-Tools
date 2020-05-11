@@ -8,8 +8,8 @@ from matplotlib import pyplot as plt
 import time
 import Search_chile as SC
 
-#Function to find a ticker per requisit
-#That requisit should be write like column name + </=/> + float
+#Function to find a ticker per requisite
+#That requisite should be written like column name + </=/> + float
 #Future work will include ratios as column name 
  
 def find_condition(df,condition):
@@ -50,38 +50,44 @@ def find_condition(df,condition):
 		print('No proper comparation')	
 	#column=condition[]
 
-def quaters_to_years(data,dates):
+def quarters_to_years(data,dates):
 		#print(dates[i]/100,dates[i]//100,dates[i]%100)
 		
 	return 0
 
 def Price_to_Earnings(df,years=1):
-	tickers=rcl.CL.read_data('registered_stocks.csv','/Data/Chile/')
+	tickers=rcl.CL.read_data('registered_stocks.csv','/Data/Chile/')	
 	tickers=tickers['Ticker'].values.tolist()
+
 	for Ticker in tickers:
 		datas,datelist=SC.list_by_date(Ticker,'net profit',df) #Datos en miles de pesos
 		datalist=datas[1:]
 		#price=ld.yahoo_quote_CL(Ticker)
-		
+	
 	return 0
 
-def Prices():
-	tickers=rcl.CL.read_data('registered_stocks.csv','/Data/Chile/')
+def prices_to_file(datafold):
+	#we pass present prices to a single file for faster screening, this file should be updated at least daily
+	tickers=rcl.CL.read_data('registered_stocks.csv',datafold,1)
 	tickers=tickers['Ticker'].values.tolist()
-	archivo=open('Prices.csv','w')
-	archivo.write('price'+','+'Ticker'+'\n')
+	prices=[]
 	for Ticker in tickers:
-		price=ld.yahoo_quote_CL(Ticker)
-		archivo.write(str(price)+','+Ticker+'\n')
-	archivo.close()
+		quote,m=ld.live_quote_cl(Ticker)
+		prices.append(quote)
+	df=pd.DataFrame()
+	df['ticker']=tickers
+	df['price']=prices
+	print(df)
+	df.to_csv(datafold+'Prices.csv', index = None, header=True)
+
 
 #####################################################################
 
-datafold='/Data/Chile/'
-file_name='Database_in_CLP.csv'
-Ticker='AUSTRALIS'
+#datafold='/Data/Chile/'
+#file_name='Database_in_CLP.csv'
+#Ticker='AUSTRALIS'
 
-df=rcl.CL.read_data(file_name,datafold)
+#df=rcl.CL.read_data(file_name,datafold)
 #print(df.loc[:, ['revenue','Date','TICKER']])
 #start=time.time()
 #df = SC.all_CLP(df)
@@ -90,8 +96,10 @@ df=rcl.CL.read_data(file_name,datafold)
 #quaters_to_years(datas,datelist)
 
 #print(rcl.CL.read_data('registered_stocks.csv','/Data/Chile/'))
-Price_to_Earnings(df)
-Prices()
+#Price_to_Earnings(df)
+wd=os.getcwd()
+datafold='/Data/Chile/'
+prices_to_file(wd+datafold)
 
 
 

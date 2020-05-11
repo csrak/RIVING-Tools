@@ -248,14 +248,16 @@ def scrap_fillings(urls,filenames,update=0):
 #Data is saved as a pandas DataFrame and returned
 #
 
-def read_data(filename,datafold):
-    wd=os.getcwd()
+def read_data(filename,datafold,wd=0):
+    if wd==0:
+        wd=os.getcwd()
+    else:
+        wd=''
     if os.path.exists(wd+datafold+filename):
         df=pd.read_csv(wd+datafold+filename, header=0)
         df = df.astype(str)
     else:
-        print('File not found in '+ wd+datafold+filename)
-        return 0
+        raise SystemExit('File not found in '+ wd+datafold+filename) 
     
     return df
 

@@ -30,7 +30,6 @@ years=set(years) #Set for faster search
 present_trimester_tags={'TrimestreActual','p6','id113','Actual','ID_P3','CierreTrimestreActual','p1_Instant'}#,'id349','id3810'} #Only present trimester
 #weirder_tags= {'ctx_instant_Fecha_20190331','ctx_instant_Fecha_20190630','ctx_instant_Fecha_20190930','ctx_instant_Fecha_20191231','ID_P1'} # Present trimester, but may be wrong
 cumulative_tags={'TrimestreAcumuladoActual','p1_Duration','id11792','AcumuladoAnoActual'}#,'id11','id15027'} #YearToDate
-CLP_currency_tags={'CLP','id14','shares','pure'} #Tags to identify chilean currency
 
 #Numbers
 lista=[['Revenue','ifrs-full:revenue'],
@@ -301,7 +300,7 @@ def read_spec_xblr(param, param2,atparam2, folder):
                         result = float(tag.text)
     return result
 
-def get_unknown_reference(soup,param,month,year):
+def get_unknown_reference(soup,currencies,param,month,year):
     #Receives the name of a parameter from the list of parameters, a mont, a year, and a parsed xblr file
     #It searches for the data in the file trying to search trimestral data first
     #If trimestral data not found it returns YTD data
@@ -341,29 +340,63 @@ def get_unknown_reference(soup,param,month,year):
                 if datafromperiods['contextref']==context['id']: #Identifies the correspondent period from the defined ones
                     #print(((context.find('xbrli:period')).find('xbrli:enddate')).contents)
                     if ((context.find(per)).find(inst)) != None: #If instant tag exists means there is no period (I.E.For current assets)
-                        if (datafromperiods['unitref'] in CLP_currency_tags):  # Searches for currency code in list
-                                clp = 0
-                        else:
-                                clp = 1
+                        clp=currencies[datafromperiods['unitref']]
                             #print('Found Trimestral')
                         return datafromperiods.text,0.0,clp  #If instant means there are no existent (useful) periods so we return this data
                     if year+'-'+month in ((context.find(per)).find(endd)).contents[0]:                            
                         if year+'-'+start_month in ((context.find(per)).find(stard)).contents[0]:
-                            if (datafromperiods['unitref'] in CLP_currency_tags):# Searches for currency code in list
-                                clp = 0
-                            else:
-                                clp = 1
+                            clp=currencies[datafromperiods['unitref']]
                             #print('Found Trimestral')
                             return datafromperiods.text,0,clp #If trimestral data found, search stops and we can go back
                         elif year+'-01' in ((context.find(per)).find(stard)).contents[0]:
-                            if (datafromperiods['unitref'] in CLP_currency_tags):# Searches for currency code in list
-                                clp = 0
-                            else:
-                                clp = 1               
+                            clp=currencies[datafromperiods['unitref']]           
                             acum=1 #If we find YTD data we save it, but keep searching for the trimestral data
                             end_value=datafromperiods.text #If we find YTD data we save it, but keep searching for the trimestral data
                             #print('Found Accumulated')
     return end_value, acum,clp
+
+def get_currencies(soup):
+    #Receives the name of a parameter from the list of parameters, a mont, a year, and a parsed xblr file
+    #It searches for the data in the file trying to search trimestral data first
+    #If trimestral data not found it returns YTD data
+    #os.chdir(folder)
+    #For searching the right period calculates the start of the trimester (If trimester  is different it won't find it)
+    param='xbrli:unit'
+    units=soup.find_all(param)
+    #print(filling_type)
+    mes='measure'
+    num='unitnumerator'
+    div='divide'
+    den='unitdenominator'
+    if units:
+        mes='xbrli:'+mes
+        num='xbrli:'+num
+        div='xbrli:'+div
+        den='xbrli:'+den        
+    else:
+        units=soup.find_all('unit')
+    #print(param + '=' )
+    #print(tag_list)
+    #ref_list=[tag['contextref'] for tag in tag_list]
+    #print(tag_list)
+    currency_list={}
+    for unit in units: #Loop through the units
+        if len(unit.find_all(mes))>1:
+            #print(unit.find_all(mes))
+            if 'usd' in ((((unit.find(div)).find(num)).find(mes)).contents[0]).lower():
+                currency_list[unit['id']]= 1
+            else:
+                currency_list[unit['id']]= 0
+        else:            
+            #print(unit.find(mes).contents[0])
+            if 'usd' in (unit.find(mes).contents[0]).lower():
+                currency_list[unit['id']]= 1
+            else:
+                currency_list[unit['id']]= 0       
+    #print(currency_list) 
+    return currency_list
+
+
 
     
 def read_xblr(folder,fin_dat_list,month,year):
@@ -399,6 +432,7 @@ def read_xblr(folder,fin_dat_list,month,year):
             filling = f.read()
             
             soup = BeautifulSoup(filling, 'lxml')
+            currencies=get_currencies(soup)
             tag_list = soup.find_all()
             #Attributes are in lowercase, which is why this may either be done manually
             # or it may be done for all attributes 
@@ -417,10 +451,7 @@ def read_xblr(folder,fin_dat_list,month,year):
                     if fin_dat_list[i][1] == tag.name and (tag['contextref'] in present_trimester_tags):
                         #print(tag.name + ' '+ tag.text + ' ' + tag['unitref'] )
                         fin_dat[1] = float(tag.text)   
-                        if (tag['unitref'] in CLP_currency_tags):
-                            fin_dat[3] = 0
-                        else:
-                            fin_dat[3] = 1
+                        fin_dat[3] = currencies[tag['unitref']]
                         found = 1
                         fin_dat[2]=0
                 #if found == 0:
@@ -438,15 +469,12 @@ def read_xblr(folder,fin_dat_list,month,year):
                     for tag in tag_list:
                         if fin_dat_list[i][1] == tag.name and (tag['contextref'] in cumulative_tags):
                             #print( tag.name + ' '+ tag.text + ' ' + tag['unitref'] )
-                            if (tag['unitref'] in CLP_currency_tags):
-                                fin_dat[3] = 0
-                            else:
-                                fin_dat[3] = 1
+                            fin_dat[3] = currencies[tag['unitref']]
                             fin_dat[1] = float(tag.text)                            
                             found = 1
                             fin_dat[2]=1
                 if found == 0:#last resort
-                    fin_dat[1],fin_dat[2],fin_dat[3]=get_unknown_reference(soup,fin_dat_list[i][1],month,year) #Should always find the right one, but it is also slower
+                    fin_dat[1],fin_dat[2],fin_dat[3]=get_unknown_reference(soup,currencies,fin_dat_list[i][1],month,year) #Should always find the right one, but it is also slower
                 fin_dat[0]=fin_dat_list[i][0]
                 final_list.append(fin_dat)
                 #print('\n' + fin_dat[0] +' is '+ 'CLP')
@@ -587,9 +615,9 @@ def all_companies(lista,folder,month,year,update=0,monthup=0,yearup=0):
         except IOError:
             print('Database file '+ file_name + 'does not exist')
     if monthup == 0 or yearup == 0:
-        all_banks('/Data/Chile/Banks/',month,year)
+        all_banks(folder+'Banks/',month,year)
     else:
-        all_banks('/Data/Chile/Banks/',month,year, monthup, yearup)
+        all_banks(folder+'Banks/',month,year, monthup, yearup)
     
 
 
@@ -742,7 +770,7 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
             name_month=12
             name_year-=1  
         names,mb1,mr1,mc1=CL.get_bank_tickers(datafold)
-        repeated=['5001000','5002000','5100000','1270000','1800000','2100000']
+        repeated=['5001000','5002000','5100000','1270000','1800000','2100000'] #Fors some reason in odler files these are repeated and are basically nan filled columns
         for cd in repeated:
             try:
                 ix=mr1[1].index(cd)
@@ -817,7 +845,7 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')
-#read_xblr(wd+datafold+'03-2019/ATSA_03-2019/',lista,'03','2019')
+#read_xblr(wd+datafold+'03-2019/AESGENER_03-2019/',lista,'03','2019')
 #print(res)
 #print(listafinal)
 ################
