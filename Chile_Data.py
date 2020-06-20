@@ -248,7 +248,7 @@ def scrap_fillings(urls,filenames,update=0):
 #Data is saved as a pandas DataFrame and returned
 #
 
-def read_data(filename,datafold,wd=0):
+def read_data(filename,datafold='/',wd=0):
     if wd==0:
         wd=os.getcwd()
     else:
@@ -432,7 +432,7 @@ def Tick2Rut(ruts,tickers):
                 curr_simil=simil
                 #test_order[i]=b
                 #test_order2[i]=simil
-            if j==(range2-1) and curr_simil<0.750:
+            if j==(range2-1) and curr_simil<0.90:
                     rut_order[i]= 'ERROR HIGH: BANK OR NOT FOUND'   
             #Not checking errors anymore since doesn't have any
             #print(a)
@@ -447,9 +447,9 @@ def Tick2Rut(ruts,tickers):
     return tickers
 
 
-def tick2code(names): # We search for the tickers corresponding to the banks and obtain the IFI Code of each
+def tick2code(datafold,names): # We search for the tickers corresponding to the banks and obtain the IFI Code of each
     #If the ticker is not found we leave the institution name as the ticker for completeness purposes
-    df=read_data('registered_stocks.csv','/Data/Chile/')
+    df=read_data('registered_stocks.csv',datafold,wd=1)
     tickers=[df['Ticker'].tolist(),df['Name'].tolist()]
     for i in range(len(names[0])):
         for j in range(len(tickers[0])): 
@@ -709,7 +709,7 @@ def read_bank_codes(datafold):
 
 def get_bank_tickers(datafold):
     names,mb1,mr1,mc1=read_bank_codes(datafold)
-    names=tick2code(names)
+    names=tick2code(datafold,names)
     return names,mb1,mr1,mc1
 
 

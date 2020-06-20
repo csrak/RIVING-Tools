@@ -253,10 +253,6 @@ def upandgetem(month1,year1,month2 = 0,year2 = 0,update = 0 ):
            print('Invalid Date 2') 
     else:
         print('Invalid Date 1')
-    if month2 == 0 or year2 == 0:
-        CL.bruteforce_bank_scrap(month,year)
-    else:
-         CL.bruteforce_bank_scrap(month,year, month2, year2)
 
 def read_spec_xblr(param, param2,atparam2, folder):
     # If returns -1 it means not found
@@ -340,9 +336,12 @@ def get_unknown_reference(soup,currencies,param,month,year):
                 if datafromperiods['contextref']==context['id']: #Identifies the correspondent period from the defined ones
                     #print(((context.find('xbrli:period')).find('xbrli:enddate')).contents)
                     if ((context.find(per)).find(inst)) != None: #If instant tag exists means there is no period (I.E.For current assets)
-                        clp=currencies[datafromperiods['unitref']]
-                            #print('Found Trimestral')
-                        return datafromperiods.text,0.0,clp  #If instant means there are no existent (useful) periods so we return this data
+                        if year+'-'+month in ((context.find(per)).find(inst)).contents[0]:
+                            clp=currencies[datafromperiods['unitref']]
+                                #print('Found Trimestral')
+                            return datafromperiods.text,0.0,clp  #If instant means there are no existent (useful) periods so we return this data
+                        else:
+                            continue
                     if year+'-'+month in ((context.find(per)).find(endd)).contents[0]:                            
                         if year+'-'+start_month in ((context.find(per)).find(stard)).contents[0]:
                             clp=currencies[datafromperiods['unitref']]
@@ -547,7 +546,7 @@ def test_xblr(param, param2,atparam2, folder):
 #Useful Data
 #list2=[['Major Customer Risk','ifrs-full:DisclosureOfSegmentsMajorCustomersExplanatory'],]
 
-def all_companies(lista,folder,month,year,update=0,monthup=0,yearup=0):
+def all_companies(lista,folder,month,year,monthup=0,yearup=0,update=0,updatemonth=0,updateyear=0):
     #Option Update, to update existing database with new data change update option to 1 and add a month and a year from an existing database file
     ## The result will be a dataframe of all data with indicated date informat int -> year*100+month
     #  and stock ticker in "Ticker" column   
@@ -610,8 +609,11 @@ def all_companies(lista,folder,month,year,update=0,monthup=0,yearup=0):
         print(all_stocks_all_dates)
     else:
         try:
-            file_name='Database_Chile_Since_'+monthup+'-'+yearup+'.csv'
-            all_stocks_all_dates.to_csv(folder+file_name, mode = 'a', index = None, header=False)
+            file_name='Database_Chile_Since_'+updatemonth+'-'+updateyear+'.csv'
+            df=CL.read_data(file_name,folder,1)
+            all_stocks_all_dates=pd.concat([df, all_stocks_all_dates], ignore_index=True)
+            all_stocks_all_dates.drop_duplicates(inplace = True) 
+            all_stocks_all_dates.to_csv(folder+file_name,index = None, header=True)
         except IOError:
             print('Database file '+ file_name + 'does not exist')
     if monthup == 0 or yearup == 0:
@@ -736,13 +738,13 @@ def duplicated_varnames(df):
     return repeat_dict
     
 def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0):
-    wd=os.getcwd()
+    os.chdir(folder)
     month=int(month)
     year=int(year)
     monthup=int(monthup)
     yearup=int(yearup)
-    if not os.path.exists(wd+folder+'Tickers/'):
-        os.mkdir(wd+folder+'Tickers/')
+    if not os.path.exists(folder+'Tickers/'):
+        os.mkdir(folder+'Tickers/')
     previous_months=(yearup-year)*12-((month))+monthup+1 #We calculate how many months 
     print('months')
     print(previous_months)
@@ -753,15 +755,15 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
         if name_month<10:
             name_month='0'+str(name_month)      
         filename=str(name_year)+str(name_month)
-        if glob.glob(wd+folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/b1*'):
-            datafold=wd+folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/'
+        if glob.glob(folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/b1*'):
+            datafold=folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/'
             print('c1 %s',datafold)    
         else:
             try:
-                datafold=glob.glob(wd+folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/'+'*')[0]+'/'
+                datafold=glob.glob(folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/'+'*')[0]+'/'
                 print('c2 %s',datafold)   
             except IndexError:
-                print(str(name_month)+' Month noth found at year '+ str(name_year))
+                print(folder+'Banks_'+str(name_month)+'-'+str(name_year)+'/ '+' Folder not found')
                 continue
         name_month=int(name_month)
         if name_month>1:
@@ -782,7 +784,7 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
             df=df = pd.DataFrame(columns=['ticker','codes'])
             df['ticker']=names[0]
             df['codes']=names[1]
-            df.to_csv(wd+folder+'Tickers/'+'Tickers_'+filename, index = None, header=True)
+            df.to_csv(folder+'Tickers/'+'Tickers_'+filename, index = None, header=True)
         b1,r1,c1=read_bank_txt(datafold,filename,names[1],mb1[1],mr1[1],mc1[1])
         #Now we change the lit of lists to pandas dataframe, rearranging first to coincide iwth pandas formatting
         final_list=[]
@@ -799,6 +801,7 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
             final_df.append(df)
     df1=pd.DataFrame()
     df1=df1.append(final_df)
+    name_month=int(name_month)
     if name_month<10:
         name_month='0'+str(name_month) 
     df_col=pd.DataFrame(data={'balance':mb1[0]})
@@ -806,13 +809,14 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
     df_col=pd.concat([df_col,df_col2], ignore_index=True, axis=1)
     df_col2=pd.DataFrame(data={'complementary':mc1[0]})  
     df_col=pd.concat([df_col,df_col2], ignore_index=True, axis=1)
-    df_col.to_csv(wd+folder+'bank_parameters_since_'+str(month)+'-'+str(year)+'.csv', index = None, header=True)
-    df1.to_csv(wd+folder+'bank_database_since_'+str(month)+'-'+str(year)+'.csv', index = None, header=True)
+    df_col.to_csv(folder+'bank_parameters_since_'+str(month)+'-'+str(year)+'.csv', index = None, header=True)
+    df1.to_csv(folder+'bank_database_since_'+str(month)+'-'+str(year)+'.csv', index = None, header=True)
 
-
+#update_database
 
 #all_banks('/Data/Chile/Banks/','11','2012', '03', '2020')
 #Update_Data('03','2013')
+
 #upandgetem('03','2013')
 #upandgetem('06','2013')
 #upandgetem('09','2013')
@@ -845,6 +849,7 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')
+#all_companies(lista,wd+datafold,'03','2020',update=1,updatemonth='03',updateyear='2013')
 #read_xblr(wd+datafold+'03-2019/AESGENER_03-2019/',lista,'03','2019')
 #print(res)
 #print(listafinal)

@@ -55,39 +55,79 @@ def quarters_to_years(data,dates):
 		
 	return 0
 
-def Price_to_Earnings(df,years=1):
-	tickers=rcl.CL.read_data('registered_stocks.csv','/Data/Chile/')	
-	tickers=tickers['Ticker'].values.tolist()
-
+def price_to_parameter(df,para,tofile=0,filename='Prices',years=1):		
+	prices_f=rcl.CL.read_data('Prices.csv')
+	tickers=prices_f['ticker'].values.tolist()
+	prices=prices_f['price'].values.tolist()
+	shares=(pd.to_numeric(prices_f['shares'],errors='coerce')).tolist()
+	parameter=[]
+	p_para=[]
 	for Ticker in tickers:
-		datas,datelist=SC.list_by_date(Ticker,'net profit',df) #Datos en miles de pesos
-		datalist=datas[1:]
-		#price=ld.yahoo_quote_CL(Ticker)
-	
-	return 0
+		datas,datelist=SC.list_by_date(Ticker,para,df) #Datos en miles de pesos
+		try: 
+			if len(datelist)>3 and datas[-1]==datas[-1] and datas[-2]==datas[-2] and datas[-3]==datas[-3] and datas[-4]==datas[-4]:
+				parameter.append(datas[-1]+datas[-2]+datas[-3]+datas[-4])
+			else:
+				parameter.append(np.nan)
+		except TypeError:
+			parameter.append(np.nan)
+			print('Data no found for '+Ticker)
+	#print(shares)
+	p_para=np.divide(np.multiply(np.array(prices,dtype=np.float32),np.array(shares,dtype=np.float32)),np.array(parameter,dtype=np.float32))
+	#prices_f[para]=parameter
+	prices_f['price/'+para]=p_para
+	if tofile!=0:
+		prices_f.to_csv(filename+'.csv', index = None, header=True)
+	return prices_f
+
+
+
+
+def quick_ratio(df,tofile=0,filename='Prices',years=1):
+	prices_f=rcl.CL.read_data('Prices.csv')
+	tickers=prices_f['ticker'].values.tolist()
+	quick_ratio=[]
+	for Ticker in tickers:
+		datas,datelist=SC.list_by_date(Ticker,'Current Liabilities',df) #Datos en miles de pesos
+		try:
+			curr_lia=float(datas[-1])
+		except ValueError:
+			curr_lia=np.nan
+		datas,datelist=SC.list_by_date(Ticker,'Current Assets',df) #Datos en miles de pesos
+		try:
+			curr_ass=float(datas[-1])
+		except ValueError:
+			curr_ass=np.nan
+		quick_ratio.append(curr_ass/curr_lia)	
+	prices_f['QR']=quick_ratio
+	if tofile!=0:
+		prices_f.to_csv(filename+'.csv', index = None, header=True)
+	return prices_f
+
+
 
 def prices_to_file(datafold):
+	df=rcl.CL.read_data('Database_in_CLP.csv',datafold,1)
 	#we pass present prices to a single file for faster screening, this file should be updated at least daily
 	tickers=rcl.CL.read_data('registered_stocks.csv',datafold,1)
 	tickers=tickers['Ticker'].values.tolist()
 	prices=[]
+	shares=[]
 	for Ticker in tickers:
 		quote,m=ld.live_quote_cl(Ticker)
 		prices.append(quote)
+		shares.append(SC.get_shares(df,Ticker,quote,m))
 	df=pd.DataFrame()
 	df['ticker']=tickers
 	df['price']=prices
+	df['shares']=shares
 	print(df)
-	df.to_csv(datafold+'Prices.csv', index = None, header=True)
+	df.to_csv('Prices.csv', index = None, header=True)
 
 
 #####################################################################
 
-#datafold='/Data/Chile/'
-#file_name='Database_in_CLP.csv'
-#Ticker='AUSTRALIS'
 
-#df=rcl.CL.read_data(file_name,datafold)
 #print(df.loc[:, ['revenue','Date','TICKER']])
 #start=time.time()
 #df = SC.all_CLP(df)
@@ -96,10 +136,18 @@ def prices_to_file(datafold):
 #quaters_to_years(datas,datelist)
 
 #print(rcl.CL.read_data('registered_stocks.csv','/Data/Chile/'))
-#Price_to_Earnings(df)
 wd=os.getcwd()
 datafold='/Data/Chile/'
 prices_to_file(wd+datafold)
+
+file_name='Database_in_CLP.csv'
+#Ticker='AUSTRALIS'
+
+df=rcl.CL.read_data(file_name,wd+datafold,1)
+price_to_parameter(df,'net profit',tofile=1)
+price_to_parameter(df,'net operating cashflows',tofile=1)
+quick_ratio(df,tofile=1)
+
 
 
 

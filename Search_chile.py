@@ -224,6 +224,29 @@ def list_by_date(ticker, data,df,month=0,year=0):
 	#print(datelist)
 	return datas,datelist
 
+def get_shares(df,ticker,quote,market_cap):
+	data='shares'
+	shares_l,datelist=list_by_date(ticker, data,df)
+	shares=np.nan
+	for i in range(3):
+		if quote!=0:
+			if len(shares_l)<3:
+				shares=market_cap/quote
+				break
+			elif market_cap==market_cap and market_cap!=0:
+				if shares_l[-1]!=0 and abs(shares_l[-1]*quote-market_cap)/(shares_l[-1]*quote)<0.15:
+					shares=shares_l[-1]
+					break
+				else:
+					shares=market_cap/quote
+					shares_l.pop(-1)
+			else:
+				shares=shares_l[-1]
+		else:
+			shares=shares_l[-1]
+		
+	return shares
+
 
 def plot_data_time(datelist,data1, data2=[]):
 	title1=data1[0]
