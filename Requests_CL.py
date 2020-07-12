@@ -612,7 +612,7 @@ def all_companies(lista,folder,month,year,monthup=0,yearup=0,update=0,updatemont
             file_name='Database_Chile_Since_'+updatemonth+'-'+updateyear+'.csv'
             df=CL.read_data(file_name,folder,1)
             all_stocks_all_dates=pd.concat([df, all_stocks_all_dates], ignore_index=True)
-            all_stocks_all_dates.drop_duplicates(inplace = True) 
+            all_stocks_all_dates.drop_duplicates(inplace = True,keep = 'last',subset = ['Date','TICKER','revenue'] ) 
             all_stocks_all_dates.to_csv(folder+file_name,index = None, header=True)
         except IOError:
             print('Database file '+ file_name + 'does not exist')
@@ -846,6 +846,7 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
 #upandgetem('09','2019')
 #upandgetem('12','2019')
 #upandgetem('03','2020')
+#upandgetem('06','2020')
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')

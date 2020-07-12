@@ -65,7 +65,7 @@ def yahoo_quoteA_CL(ticker): #Obtain quote from yahoo finance
     return quote
 
 def barron_quoteA_CL(ticker): #Obtain quote from yahoo finance
-    ticker2=ticker+'a'
+    ticker2=ticker+'.a'
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = "https://www.barrons.com/quote/stock/cl/xsgo/"+ticker2
     response = requests.get(url, headers=agent,verify=False)
@@ -95,7 +95,38 @@ def barron_quoteA_CL(ticker): #Obtain quote from yahoo finance
         price = parser.xpath('//span[contains(@class,"market__price bgLast")]//text()')   
         quote=float(price[0].replace(',',''))
     return quote,market_cap
-    
+
+def barron_quoteB_CL(ticker): #Obtain quote from yahoo finance
+    ticker2=ticker+'.b'
+    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+    url = "https://www.barrons.com/quote/stock/cl/xsgo/"+ticker2
+    response = requests.get(url, headers=agent,verify=False)
+    print ("Parsing %s"%(url))
+    parser = lh.fromstring(response.text)
+    summary_table = parser.xpath('.//td')   
+    multiplier='Not Found'
+    quote=''
+    for i in range(len(summary_table)):
+        if summary_table[i].text== 'Market Value':
+            multiplier=(summary_table[i+1].text)[-1]
+            summary_table=((((summary_table[i+1].text).replace('$','')).replace('B','')).replace('M','')).replace('T','')
+            break    
+    if multiplier=='Not Found':
+        quote=np.nan       
+        market_cap=0
+    else:
+        if multiplier=='T':
+                multiplier=1000000000000
+        elif multiplier=='B':
+            multiplier=1000000000
+        elif multiplier=='M':
+            multiplier=1000000
+        else:
+            multiplier=1
+        market_cap=float(summary_table)*multiplier
+        price = parser.xpath('//span[contains(@class,"market__price bgLast")]//text()')   
+        quote=float(price[0].replace(',',''))
+    return quote,market_cap
     
 def barron_quote_CL(ticker): #Obtain quote from yahoo finance
     ticker=ticker.replace(' ','')
@@ -131,6 +162,8 @@ def barron_quote_CL(ticker): #Obtain quote from yahoo finance
 
 def live_quote_cl(ticker):
     quote,market_cap=barron_quote_CL(ticker)
+    if quote!=quote or market_cap==0:
+        quote,market_cap=barron_quoteB_CL(ticker)
     if quote!=quote or market_cap==0:
         quote,market_cap=barron_quoteA_CL(ticker)
     if quote!=quote or quote==0:

@@ -355,7 +355,6 @@ def CCO(): #W.I.P
 
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#
 #############
-#Testing how pandas and the table works
 
 #datafold='/Data/Chile/Banks/'
 #file_name='bank_database_since_11-2012.csv'

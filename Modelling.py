@@ -38,9 +38,10 @@ def basic_dcf(ticker,df):
 	fit = np.polyfit(count, growth, 1)
 	print('Fit')
 	print(fit)
-	value=growth[-1]+(fit[0])*10+cash[-1]-liabilities[-1]
-	value=value/((1+(rate/100))**10)
-	value=value/shares
+	value=0
+	for i in range(1,10):
+		value+=((fit[0])*i)/((1+(rate/100))**i)
+	value=(growth[-1]+value-liabilities[-1]+cash[-1])/shares
 	#print("right value = "+ str(value*20))
 	#print("present value = "+str(quote))
 	return [ticker,str(value*20),str(quote),str(shares)]
@@ -57,56 +58,55 @@ def model_all_0(df):
 		
 
 
-
-ticker='RIPLEY'
-datafold='/Data/Chile/'
+test = 1
 file_name='Database_in_CLP.csv'
+datafold='/Data/Chile/'
 df=rcl.CL.read_data(file_name,datafold)
-#model_all_0(df)
-print(basic_dcf(ticker,df))
-
+if test == 0:
+	model_all_0(df)
 ############################ Ignore everything under ths line
-ticker='ECL'
-basic_dcf(ticker,df)
-data='net operating cashflows'
-datas,datelist=scl.list_by_date(ticker, data,df)
-scl.plot_data_time(datelist,datas)
-data='revenue'
-datas,datelist=scl.list_by_date(ticker, data,df)
-scl.plot_data_time(datelist,datas)
-data='inventories'
-datas,datelist=scl.list_by_date(ticker, data,df)
-scl.plot_data_time(datelist,datas)
-data='net profit'
-datas,datelist=scl.list_by_date(ticker, data,df)
-scl.plot_data_time(datelist,datas)
-data='assets'
-data2='liabilities'
-datas,datelist=scl.list_by_date(ticker, data,df)
-datas2,datelist=scl.list_by_date(ticker, data2,df)
-scl.plot_data_time(datelist,datas,datas2)
+else:
+	ticker='AESGENER'
+	basic_dcf(ticker,df)
+	data='net operating cashflows'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	scl.plot_data_time(datelist,datas)
+	data='revenue'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	scl.plot_data_time(datelist,datas)
+	data='inventories'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	scl.plot_data_time(datelist,datas)
+	data='net profit'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	scl.plot_data_time(datelist,datas)
+	data='assets'
+	data2='liabilities'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	datas2,datelist=scl.list_by_date(ticker, data2,df)
+	scl.plot_data_time(datelist,datas,datas2)
 
-data='trade receivables'
-data2='current assets'
-datas,datelist=scl.list_by_date(ticker, data,df)
-datas2,datelist=scl.list_by_date(ticker, data2,df)
-scl.plot_data_time(datelist,datas,datas2)
+	data='trade receivables'
+	data2='current assets'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	datas2,datelist=scl.list_by_date(ticker, data2,df)
+	scl.plot_data_time(datelist,datas,datas2)
 
-data='current assets'
-data2='current liabilities'
-datas,datelist=scl.list_by_date(ticker, data,df)
-datas2,datelist=scl.list_by_date(ticker, data2,df)
-scl.plot_data_time(datelist,datas,datas2)
+	data='current assets'
+	data2='current liabilities'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	datas2,datelist=scl.list_by_date(ticker, data2,df)
+	scl.plot_data_time(datelist,datas,datas2)
 
-data='cash'
-data2='current assets'
-datas,datelist=scl.list_by_date(ticker, data,df)
-datas2,datelist=scl.list_by_date(ticker, data2,df)
-scl.plot_data_time(datelist,datas,datas2)
+	data='cash'
+	data2='current assets'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	datas2,datelist=scl.list_by_date(ticker, data2,df)
+	scl.plot_data_time(datelist,datas,datas2)
 
-data='goodwill'
-data2='assets'
-datas,datelist=scl.list_by_date(ticker, data,df)
-datas2,datelist=scl.list_by_date(ticker, data2,df)
-scl.plot_data_time(datelist,datas,datas2)
+	data='goodwill'
+	data2='assets'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	datas2,datelist=scl.list_by_date(ticker, data2,df)
+	scl.plot_data_time(datelist,datas,datas2)
 

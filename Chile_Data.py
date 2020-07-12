@@ -734,12 +734,6 @@ def strip_spaces(datafold):
 #scrap_mw()
 #bruteforce_bank_scrap('03','2012', '03', '2020')
 
-
-
-
-
-
-#
 #scrap_offline()
 
 
