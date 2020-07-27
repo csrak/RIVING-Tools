@@ -11,5 +11,3 @@
  requests  
  PyPDF2  
  matplotlib  
- 
- by Avy y Cristian
