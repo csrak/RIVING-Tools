@@ -301,7 +301,7 @@ def get_unknown_reference(soup,currencies,param,month,year):
     #It searches for the data in the file trying to search trimestral data first
     #If trimestral data not found it returns YTD data
     #os.chdir(folder)
-    acum=2  #2 means not found (default) 1 means YTD data found, 0 means trimestral data found
+    acum='n'  #2 means not found (default) 1 means YTD data found, 0 means trimestral data found
     end_value=np.nan #Value of data, nan if not found
     clp=0 #Currency, CLP is 0, USD is 1, no other currencies implemented yet
     start_month=str(int(month)-2) #For searching the right period calculates the start of the trimester (If trimester  is different it won't find it)
@@ -339,19 +339,23 @@ def get_unknown_reference(soup,currencies,param,month,year):
                         if year+'-'+month in ((context.find(per)).find(inst)).contents[0]:
                             clp=currencies[datafromperiods['unitref']]
                                 #print('Found Trimestral')
-                            return datafromperiods.text,0.0,clp  #If instant means there are no existent (useful) periods so we return this data
+                            return datafromperiods.text,'q',clp  #If instant means there are no existent (useful) periods so we return this data
                         else:
                             continue
                     if year+'-'+month in ((context.find(per)).find(endd)).contents[0]:                            
                         if year+'-'+start_month in ((context.find(per)).find(stard)).contents[0]:
                             clp=currencies[datafromperiods['unitref']]
                             #print('Found Trimestral')
-                            return datafromperiods.text,0,clp #If trimestral data found, search stops and we can go back
+                            return datafromperiods.text,'q',clp #If trimestral data found, search stops and we can go back
                         elif year+'-01' in ((context.find(per)).find(stard)).contents[0]:
                             clp=currencies[datafromperiods['unitref']]           
                             acum=1 #If we find YTD data we save it, but keep searching for the trimestral data
                             end_value=datafromperiods.text #If we find YTD data we save it, but keep searching for the trimestral data
                             #print('Found Accumulated')
+    if acum == 0:
+        acum = 'q'
+    elif acum == 1:
+        acum = 'a'
     return end_value, acum,clp
 
 def get_currencies(soup):
@@ -409,10 +413,10 @@ def read_xblr(folder,fin_dat_list,month,year):
     # For example for Revenue
     # fin_dat[0] = String with name of data
     # fin_dat[1] = Amount of  Revenue
-    # fin_dat[2] = 0, 1 or 2
-    #              0 means quarterly revenue
-    #              1 means accumulated revenue
-    #              2 means  revenue not found
+    # fin_dat[2] = q, a or n
+    #              q means quarterly revenue
+    #              a means accumulated revenue
+    #              n means  revenue not found
     # fin_dat[3] = 0, 1
     #            0 means  CLP
     #            1 means  USD
@@ -436,11 +440,10 @@ def read_xblr(folder,fin_dat_list,month,year):
             #Attributes are in lowercase, which is why this may either be done manually
             # or it may be done for all attributes 
             #print(tag_list)
-            fin_dat=['', 0.0, 0, 0]
+            fin_dat=['', 0.0, 'n', 0]
             for i in range (0,len(fin_dat_list)):
-                fin_dat=['', 0.0, 0, 0]
-                found = 0 # Some very funny guys at some companies think it makes sense to use dates for reference numbers in standarized fillings
-                                #So I'm hardcoding tags, which is horrible
+                fin_dat=['', 0.0, 'n', 0]
+                found = 0 #Hardcoded msot common names for faster processing
                 for tag in tag_list:
                     #print(tag.name)
                     #try:
@@ -452,7 +455,7 @@ def read_xblr(folder,fin_dat_list,month,year):
                         fin_dat[1] = float(tag.text)   
                         fin_dat[3] = currencies[tag['unitref']]
                         found = 1
-                        fin_dat[2]=0
+                        fin_dat[2]='q'
                 #if found == 0:
                 #    for tag in tag_list:
                 #        if fin_dat_list[i][1] == tag.name and (tag['contextref'] in weirder_tags):
@@ -471,7 +474,7 @@ def read_xblr(folder,fin_dat_list,month,year):
                             fin_dat[3] = currencies[tag['unitref']]
                             fin_dat[1] = float(tag.text)                            
                             found = 1
-                            fin_dat[2]=1
+                            fin_dat[2]='a'
                 if found == 0:#last resort
                     fin_dat[1],fin_dat[2],fin_dat[3]=get_unknown_reference(soup,currencies,fin_dat_list[i][1],month,year) #Should always find the right one, but it is also slower
                 fin_dat[0]=fin_dat_list[i][0]
@@ -847,10 +850,10 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
 #upandgetem('12','2019')
 #upandgetem('03','2020')
 #upandgetem('06','2020')
-#wd=os.getcwd()   
-#datafold='/Data/Chile/'
+wd=os.getcwd()   
+datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')
-#all_companies(lista,wd+datafold,'03','2020',update=1,updatemonth='03',updateyear='2013')
+all_companies(lista,wd+datafold,'03','2020',update=1,updatemonth='03',updateyear='2013')
 #read_xblr(wd+datafold+'03-2019/AESGENER_03-2019/',lista,'03','2019')
 #print(res)
 #print(listafinal)
