@@ -68,8 +68,12 @@ def scrap_company_Links(companies_list,month, year):
 def scrap_file_links(url,filet):
     if filet==999:
         return 'Invalid Link'
-    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-    page = requests.get(url, headers=agent) 
+    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36'}
+    try:
+        page = requests.get(url, headers=agent) 
+    except requests.exceptions.ConnectionError:
+        print("Connection error -> Trying next one")    
+        return 'Invalid Link'  
     page=lh.fromstring(page.content)
 
     #We obtain every <a and take the URLS to a list

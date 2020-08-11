@@ -19,6 +19,7 @@ def all_CLP(df):
 	#print(df.loc[[1501],:])
 	#print(df.loc[[1502],:])}
 	counter=0
+	df
 	for i in range(n2):
 		df.iloc[:,i]=pd.to_numeric(df.iloc[:,i], errors='coerce')
 
@@ -184,8 +185,8 @@ def list_by_date(ticker, data,df,month=0,year=0):
 		if data.lower() not in rcl.lista_instant:		
 			if i==0:
 				temp.append(float(datas[2*i]))
-			elif datas[2*i+1]=='a' and datelist[i]//100==datelist[i-1]//100: #Check if accumulated or only this trimester, then check if same year
-				if datas[2*i-1]=='q': #This means that we cannot substract directly, since previous point of data is 
+			elif datas[2*i+1]=='11'and datelist[i]//100==datelist[i-1]//100: #Check if accumulated or only this trimester, then check if same year
+				if datas[2*i-1]=='10': #This means that we cannot substract directly, since previous point of data is 
 					#print('Yes')
 											# for one trimester, while now is cumulative for full year
 					j=i #we set aux variable j to move through array
@@ -195,7 +196,7 @@ def list_by_date(ticker, data,df,month=0,year=0):
 						j=j-1 #Counter		
 						#print(datas[2*j])								
 						value-=float(datas[2*j]) #We substract to ce accumulated value, the previous data point
-						if float(datas[2*j+1])=='a' or datelist[j-1]//100!=datelist[j]//100: 
+						if float(datas[2*j+1])=='11'or datelist[j-1]//100!=datelist[j]//100: 
 							#If we have that we are now in a point which includes previous trimesters we can get out
 							# Also if the next data point we would substract corresponds to another year
 							# meaning we already substracted full year data 

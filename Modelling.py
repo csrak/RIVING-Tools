@@ -66,12 +66,15 @@ if test == 0:
 	model_all_0(df)
 ############################ Ignore everything under ths line
 else:
-	ticker='MINERA'
+	ticker='ZOFRI'
 	basic_dcf(ticker,df)
 	data='net operating cashflows'
 	datas,datelist=scl.list_by_date(ticker, data,df)
 	scl.plot_data_time(datelist,datas)
 	data='revenue'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	scl.plot_data_time(datelist,datas)
+	data='equity'
 	datas,datelist=scl.list_by_date(ticker, data,df)
 	scl.plot_data_time(datelist,datas)
 	data='inventories'
