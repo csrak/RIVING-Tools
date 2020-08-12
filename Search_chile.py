@@ -215,7 +215,6 @@ def list_by_date(ticker, data,df,month=0,year=0):
 				else:
 					temp.append(float(datas[2*i])-float(datas[2*i-2]))
 			else:
-				print('enters2')
 				temp.append(float(datas[2*i]))
 		else:
 			temp.append(float(datas[2*i]))
