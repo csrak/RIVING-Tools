@@ -171,7 +171,7 @@ def list_by_date(ticker, data,df,month=0,year=0):
 		for j in range(len(df)):
 			if df.iloc[j]['Date']==str(datelist[i]):
 				temp=df.iloc[j][data]
-				datas.append(temp)
+				datas.append(float(temp))
 				check=1
 		if check==0:
 				datas.append(np.nan)
@@ -182,11 +182,11 @@ def list_by_date(ticker, data,df,month=0,year=0):
 	#print(datas)
 	temp=[]
 	for i in range(n//2):
-		if data.lower() not in rcl.lista_instant:		
+		if data.lower() not in rcl.lista_instant:	
 			if i==0:
 				temp.append(float(datas[2*i]))
-			elif datas[2*i+1]=='11'and datelist[i]//100==datelist[i-1]//100: #Check if accumulated or only this trimester, then check if same year
-				if datas[2*i-1]=='10': #This means that we cannot substract directly, since previous point of data is 
+			elif (datas[2*i+1]==  11.0) and (datelist[i]//100)==(datelist[i-1]//100): #Check if accumulated or only this trimester, then check if same year
+				if datas[2*i-1]==10: #This means that we cannot substract directly, since previous point of data is 
 					#print('Yes')
 											# for one trimester, while now is cumulative for full year
 					j=i #we set aux variable j to move through array
@@ -196,25 +196,26 @@ def list_by_date(ticker, data,df,month=0,year=0):
 						j=j-1 #Counter		
 						#print(datas[2*j])								
 						value-=float(datas[2*j]) #We substract to ce accumulated value, the previous data point
-						if float(datas[2*j+1])=='11'or datelist[j-1]//100!=datelist[j]//100: 
+						if float(datas[2*j+1])==11 or datelist[j-1]//100!=datelist[j]//100: 
 							#If we have that we are now in a point which includes previous trimesters we can get out
 							# Also if the next data point we would substract corresponds to another year
 							# meaning we already substracted full year data 
 							if j-1<0 and datelist[j]-100*(datelist[j]//100)!=3:
 								return "Cumulative and Missing data at",datelist[j]
 							break
-						elif datas[2*j+1]=='n':
+						elif datas[2*j+1]==12:
 							#If we have cumulative data but a point is missing we get out informing this needs to be manually adressed
 							return "Cumulative and Missing data at",datelist[j]
 					#We append the value of the total substraction
 					temp.append(value)					
-				elif datas[2*i-1]=='n':				
+				elif datas[2*i-1]==12:				
 					#If we have cumulative data but a point is missing we get out informing this needs to be manually adressed
 					print('Cumulative and Missing data at', datelist[i])
 					temp.append(np.nan)
 				else:
 					temp.append(float(datas[2*i])-float(datas[2*i-2]))
 			else:
+				print('enters2')
 				temp.append(float(datas[2*i]))
 		else:
 			temp.append(float(datas[2*i]))
@@ -361,12 +362,12 @@ def CCO(): #W.I.P
 #file_name='bank_database_since_11-2012.csv'
 
 
-datafold='/Data/Chile/'
-file_name='Database_Chile_Since_03-2013.csv'
+#datafold='/Data/Chile/'
+#file_name='Database_Chile_Since_03-2013.csv'
 
-df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
+#df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
 #start=time.time()
-df = all_CLP(df)
+#df = all_CLP(df)
 #print(time.time()-start)
 
 #tickers='BSANTANDER'

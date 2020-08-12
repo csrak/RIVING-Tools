@@ -850,9 +850,9 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
 #upandgetem('12','2019')
 #upandgetem('03','2020')
 #upandgetem('06','2020')
-wd=os.getcwd()   
-datafold='/Data/Chile/'
-all_companies(lista,wd+datafold,'03','2013')
+#wd=os.getcwd()   
+#datafold='/Data/Chile/'
+#all_companies(lista,wd+datafold,'03','2013')
 #all_companies(lista,wd+datafold,'03','2020',update=1,updatemonth='03',updateyear='2013')
 #read_xblr(wd+datafold+'03-2019/AESGENER_03-2019/',lista,'03','2019')
 #print(res)
