@@ -55,20 +55,29 @@ def quarters_to_years(data,dates):
 		
 	return 0
 
-def price_to_parameter(df,para,tofile=0,filename='Prices',years=1):		
-	prices_f=rcl.CL.read_data('Prices.csv')
+def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0):	
+	prices_f=rcl.CL.read_data('Prices.csv')	
 	tickers=prices_f['ticker'].values.tolist()
 	prices=prices_f['price'].values.tolist()
 	shares=(pd.to_numeric(prices_f['shares'],errors='coerce')).tolist()
 	parameter=[]
 	p_para=[]
+
 	for Ticker in tickers:
+		corr=1
+		if corr_min != 0:
+			a,dl=SC.list_by_date(Ticker,'Non-Controlling Profit',df)
+			b,dl=SC.list_by_date(Ticker,'Net Profit',df)
+			try:
+				corr = (b[-1]-a[-1])/b[-1]
+			except TypeError:
+				corr = 1
 		datas,datelist=SC.list_by_date(Ticker,para,df) #Datos en miles de pesos
 		try: 
 			if len(datelist)>3 and datas[-1]==datas[-1] and datas[-2]==datas[-2] and datas[-3]==datas[-3] and datas[-4]==datas[-4]:
-				parameter.append(datas[-1]+datas[-2]+datas[-3]+datas[-4])
+				parameter.append((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)
 			else:
-				parameter.append(np.nan)
+				parameter.append(np.nan*corr)
 		except TypeError:
 			parameter.append(np.nan)
 			print('Data no found for '+Ticker)
@@ -144,8 +153,8 @@ file_name='Database_in_CLP.csv'
 #Ticker='AUSTRALIS'
 
 df=rcl.CL.read_data(file_name,wd+datafold,1)
-price_to_parameter(df,'net profit',tofile=1)
-price_to_parameter(df,'net operating cashflows',tofile=1)
+price_to_parameter(df,'net profit',tofile=1,corr_min = 1)
+price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1)
 quick_ratio(df,tofile=1)
 
 

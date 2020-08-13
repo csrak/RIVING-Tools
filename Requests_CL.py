@@ -35,6 +35,9 @@ cumulative_tags={'TrimestreAcumuladoActual','p1_Duration','id11792','AcumuladoAn
 lista=[['Revenue','ifrs-full:revenue'],
 ['Net Profit','ifrs-full:ProfitLoss'],
 ['Operating Profit','ifrs-full:profitlossfromcontinuingoperations'],
+['Non-Controlling Profit','ifrs-full:ProfitLossAttributableToNoncontrollingInterests'],
+['EPS','ifrs-full:BasicAndDilutedEarningsLossPerShare'],
+['Operating-EPS','ifrs-full:BasicAndDilutedEarningsLossPerShareFromContinuingOperations'],
 ['Interest Revenue','ifrs-full:InterestRevenueExpense'],
 ['Cash from sales','ifrs-full:ReceiptsFromSalesOfGoodsAndRenderingOfServices'],
 ['Cash from yield','ifrs-full:ReceiptsFromPremiumsAndClaimsAnnuitiesAndOtherPolicyBenefits'],
@@ -619,10 +622,10 @@ def all_companies(lista,folder,month,year,monthup=0,yearup=0,update=0,updatemont
             all_stocks_all_dates.to_csv(folder+file_name,index = None, header=True)
         except IOError:
             print('Database file '+ file_name + 'does not exist')
-    if monthup == 0 or yearup == 0:
-        all_banks(folder+'Banks/',month,year)
-    else:
-        all_banks(folder+'Banks/',month,year, monthup, yearup)
+    #if monthup == 0 or yearup == 0:
+    #    all_banks(folder+'Banks/',month,year)
+    #else:
+    #    all_banks(folder+'Banks/',month,year, monthup, yearup)
     
 
 
