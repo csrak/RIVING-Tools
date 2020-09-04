@@ -9,7 +9,6 @@ import os
 import glob
 from bs4 import BeautifulSoup
 from pathlib import Path
-from difflib import SequenceMatcher
 import re
 import tabula #install tabula-py
 import Chile_Data as CL
@@ -17,8 +16,6 @@ from zipfile import ZipFile
 import urllib3
 import numpy as np
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-
 
 
 def mw_quote_CL(ticker): #Obtain quote from marketwatch finance
@@ -34,8 +31,6 @@ def mw_quote_CL(ticker): #Obtain quote from marketwatch finance
     else:
         quote=float(summary_table[0].replace(',',''))     
     return quote
-
-
 
 def yahoo_quote_CL(ticker): #Obtain quote from yahoo finance
     ticker2=ticker.replace(' ','')+'.SN'

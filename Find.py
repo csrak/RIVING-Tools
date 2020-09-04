@@ -74,7 +74,7 @@ def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0):
 				corr = 1
 		datas,datelist=SC.list_by_date(Ticker,para,df) #Datos en miles de pesos
 		try: 
-			if len(datelist)>3 and datas[-1]==datas[-1] and datas[-2]==datas[-2] and datas[-3]==datas[-3] and datas[-4]==datas[-4]:
+			if len(datelist)>3 and datas[-1]==datas[-1] and datas[-2]==datas[-2] and datas[-3]==datas[-3] and datas[-4]==datas[-4] and ((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)!=0:
 				parameter.append((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)
 			else:
 				parameter.append(np.nan*corr)
