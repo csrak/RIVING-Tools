@@ -596,7 +596,8 @@ def all_companies(lista,folder,month,year,monthup=0,yearup=0,update=0,updatemont
             ticker=ticker[1:-8]
             print('\n ' + ticker + ' Found for date: ' + str(subfolders[i][1])[0:4] + ' / ' + str(subfolders[i][1])[4:6])
             listafinal['Date']=subfolders[i][1]
-            listafinal['TICKER']=ticker            
+            listafinal['TICKER']=ticker   
+            listafinal['code'] = [ticker+str(subfolders[i][1]) +'-1', ticker+str(subfolders[i][1]) +'-2', ticker+str(subfolders[i][1]) +'-3']
             if (j==0):
                 print('initial lenght = '+ str(len(listafinal.columns)))
                 check=len(listafinal.columns)
@@ -618,7 +619,7 @@ def all_companies(lista,folder,month,year,monthup=0,yearup=0,update=0,updatemont
             file_name='Database_Chile_Since_'+updatemonth+'-'+updateyear+'.csv'
             df=CL.read_data(file_name,folder,1)
             all_stocks_all_dates=pd.concat([df, all_stocks_all_dates], ignore_index=True)
-            all_stocks_all_dates.drop_duplicates(inplace = True,keep = 'last',subset = ['Date','TICKER','revenue'] ) 
+            all_stocks_all_dates.drop_duplicates(inplace = True,keep = 'last',subset = ['code'] ) 
             all_stocks_all_dates.to_csv(folder+file_name,index = None, header=True)
         except IOError:
             print('Database file '+ file_name + 'does not exist')
@@ -853,10 +854,12 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
 #upandgetem('12','2019')
 #upandgetem('03','2020')
 #upandgetem('06','2020')
+#upandgetem('09','2020')
+#upandgetem('12','2020')
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')
-#all_companies(lista,wd+datafold,'06','2020',update=1,updatemonth='03',updateyear='2013')
+#all_companies(lista,wd+datafold,'03','2020',update=1,updatemonth='03',updateyear='2013')
 #read_xblr(wd+datafold+'03-2019/AESGENER_03-2019/',lista,'03','2019')
 #print(res)
 #print(listafinal)

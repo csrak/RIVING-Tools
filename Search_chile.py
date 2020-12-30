@@ -199,18 +199,18 @@ def list_by_date(ticker, data,df,month=0,year=0):
 						if float(datas[2*j+1])==11 or datelist[j-1]//100!=datelist[j]//100: 
 							#If we have that we are now in a point which includes previous trimesters we can get out
 							# Also if the next data point we would substract corresponds to another year
-							# meaning we already substracted full year data 
+							# meaning we already substracted full year data data is missing and we stop the process
 							if j-1<0 and datelist[j]-100*(datelist[j]//100)!=3:
-								return "Cumulative and Missing data at",datelist[j]
+								return "Cumulative and Missing data at",[datelist[j]]
 							break
 						elif datas[2*j+1]==12:
 							#If we have cumulative data but a point is missing we get out informing this needs to be manually adressed
-							return "Cumulative and Missing data at",datelist[j]
+							return "Cumulative and Missing data at",[datelist[j]]
 					#We append the value of the total substraction
 					temp.append(value)					
 				elif datas[2*i-1]==12:				
 					#If we have cumulative data but a point is missing we get out informing this needs to be manually adressed
-					print('Cumulative and Missing data at', datelist[i])
+					print('Cumulative and Missing data at', datelist[i]," for ",ticker)
 					temp.append(np.nan)
 				else:
 					temp.append(float(datas[2*i])-float(datas[2*i-2]))
@@ -361,12 +361,12 @@ def CCO(): #W.I.P
 #file_name='bank_database_since_11-2012.csv'
 
 
-#datafold='/Data/Chile/'
-#file_name='Database_Chile_Since_03-2013.csv'
+datafold='/Data/Chile/'
+file_name='Database_Chile_Since_03-2013.csv'
 
-#df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
+df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
 #start=time.time()
-#df = all_CLP(df)
+df = all_CLP(df)
 #print(time.time()-start)
 
 #tickers='BSANTANDER'

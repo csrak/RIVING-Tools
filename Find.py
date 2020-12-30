@@ -1,4 +1,5 @@
 import pandas as pd
+import datetime
 import os
 import numpy as np
 from pathlib import Path
@@ -55,7 +56,10 @@ def quarters_to_years(data,dates):
 		
 	return 0
 
-def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0):	
+def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=1, check_year = True, debug = False):	
+	if check_year == True:
+		curr_date = datetime.datetime.now()
+	#corr min substracts earningsaccording to % ownership in minority stakes of the company, activated by default
 	prices_f=rcl.CL.read_data('Prices.csv')	
 	tickers=prices_f['ticker'].values.tolist()
 	prices=prices_f['price'].values.tolist()
@@ -69,18 +73,33 @@ def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0):
 			a,dl=SC.list_by_date(Ticker,'Non-Controlling Profit',df)
 			b,dl=SC.list_by_date(Ticker,'Net Profit',df)
 			try:
-				corr = (b[-1]-a[-1])/b[-1]
+				corr = (b[-1]-a[-1])/float(b[-1])	#We calculate latest % ownerships discount and substract same for all previous quarters
+											#Note this is "wrong" for previous quarters, but gives a more realistic view of the averaged future returns
+											#since previous amount of ownerships do not matter for modelling of future earnings
 			except TypeError:
-				corr = 1
-		datas,datelist=SC.list_by_date(Ticker,para,df) #Datos en miles de pesos
-		try: 
-			if len(datelist)>3 and datas[-1]==datas[-1] and datas[-2]==datas[-2] and datas[-3]==datas[-3] and datas[-4]==datas[-4] and ((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)!=0:
-				parameter.append((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)
+				corr = 1 # Correction was not possible, we do it without
+		datas,datelist=SC.list_by_date(Ticker,para,df) #Data in thousand of CLP
+		if len(datelist)>3 and datas[-1]==datas[-1]:
+			if check_year == True and ((curr_date.year-datelist[-1]//100)>1 or (curr_date.month-(datelist[-1]-(datelist[-1]//100)*100))>6):
+				print(curr_date.year)
+				print(curr_date.year-datelist[-1]//100)
+				print(curr_date.month-(datelist[-1]-(datelist[-1]//100)*100))
+				parameter.append(-999999999999999)
+				if debug == True:
+					print (Ticker +' does not report anymore (since '+str(datelist[-1])+')\n')
 			else:
-				parameter.append(np.nan*corr)
-		except TypeError:
-			parameter.append(np.nan)
-			print('Data no found for '+Ticker)
+				try: 
+					if datas[-2]==datas[-2] and datas[-3]==datas[-3] and datas[-4]==datas[-4] and ((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)!=0:
+						parameter.append((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)
+					else:
+						parameter.append(np.nan*corr)
+				except TypeError:
+					parameter.append(np.nan)
+					print('Data no found for '+Ticker)
+					if debug == True:
+						print (para+':\n'+datas+':\n'+str(datelist)+'\n')
+		else:
+			parameter.append(np.nan*corr)
 	#print(shares)
 	p_para=np.divide(np.multiply(np.array(prices,dtype=np.float32),np.array(shares,dtype=np.float32)),np.array(parameter,dtype=np.float32))
 	#prices_f[para]=parameter
@@ -151,10 +170,9 @@ prices_to_file(wd+datafold)
 
 file_name='Database_in_CLP.csv'
 #Ticker='AUSTRALIS'
-
 df=rcl.CL.read_data(file_name,wd+datafold,1)
-price_to_parameter(df,'net profit',tofile=1,corr_min = 1)
-price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1)
+price_to_parameter(df,'net profit',tofile=1,debug = True)
+price_to_parameter(df,'net operating cashflows',tofile=1,debug = True)
 quick_ratio(df,tofile=1)
 
 
