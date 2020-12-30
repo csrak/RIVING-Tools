@@ -81,9 +81,6 @@ def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=1, ch
 		datas,datelist=SC.list_by_date(Ticker,para,df) #Data in thousand of CLP
 		if len(datelist)>3 and datas[-1]==datas[-1]:
 			if check_year == True and ((curr_date.year-datelist[-1]//100)>1 or (curr_date.month-(datelist[-1]-(datelist[-1]//100)*100))>6):
-				print(curr_date.year)
-				print(curr_date.year-datelist[-1]//100)
-				print(curr_date.month-(datelist[-1]-(datelist[-1]//100)*100))
 				parameter.append(-999999999999999)
 				if debug == True:
 					print (Ticker +' does not report anymore (since '+str(datelist[-1])+')\n')
@@ -171,8 +168,8 @@ prices_to_file(wd+datafold)
 file_name='Database_in_CLP.csv'
 #Ticker='AUSTRALIS'
 df=rcl.CL.read_data(file_name,wd+datafold,1)
-price_to_parameter(df,'net profit',tofile=1,debug = True)
-price_to_parameter(df,'net operating cashflows',tofile=1,debug = True)
+price_to_parameter(df,'net profit',tofile=1,debug = False)
+price_to_parameter(df,'net operating cashflows',tofile=1,debug = False)
 quick_ratio(df,tofile=1)
 
 
