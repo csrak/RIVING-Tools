@@ -6,27 +6,37 @@ import live_data as ld
 import Requests_CL as rcl
 from matplotlib import pyplot as plt
 import time
+import datetime
 #############
 
-USDtoCLP=830 #Must be replaced with a function later
+
+
 
 #Convert all USD to CLP and clean the table. Need current USD convertion
 #Now optimized and return an archive with the convertions
-def all_CLP(df):
+def all_CLP(df,const_USD = True):
+	if const_USD == True:
+		for trial in range(0,15):
+			curr_date = datetime.datetime.now()- datetime.timedelta(days=trial)
+			USDtoCLP = ld.USDtoCLPfunc(str(curr_date.month),str(curr_date.year),str(curr_date.day))
+			if USDtoCLP > 0.0:
+				break
+	else:		
+		curr_date = datetime.datetime.now()
+		USDtoCLP = ld.USDtoCLPfunc(str(curr_date.month),str(curr_date.year),str(curr_date.day))#TBD: Change to variable USD conversion
+	
 	n=len(df)
 	n2=len(df.columns)
 	#print(df.loc[[1500],:])
 	#print(df.loc[[1501],:])
 	#print(df.loc[[1502],:])}
 	counter=0
-	df
 	for i in range(n2):
 		df.iloc[:,i]=pd.to_numeric(df.iloc[:,i], errors='coerce')
-
 		counter+=1
 		if counter==n2-2:
 			break
-	convertion_rate=USDtoCLP-1.0
+	convertion_rate=USDtoCLP
 	df2=df.iloc[:,0:-2].to_numpy()
 	df0=df2[0::3,:] #Data
 	df1=df2[1::3,:] #Acumulated or isntant indexes

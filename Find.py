@@ -21,6 +21,7 @@ def find_condition(df,condition):
 		tickers=tickers['Ticker'].values.tolist()
 		columns_in_data=df.columns.values.tolist()
 		if column in columns_in_data:
+			
 			#print('OK')
 			for Ticker in tickers:
 				datas,datelist=SC.list_by_date(Ticker,column,df) #Datos en miles de pesos
@@ -78,10 +79,13 @@ def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=1, ch
 											#since previous amount of ownerships do not matter for modelling of future earnings
 			except TypeError:
 				corr = 1 # Correction was not possible, we do it without
+			except ZeroDivisionError:
+				print("Div by zero: for "+ Ticker+ " and parameter " + para + " Non-controlling correction")
+				corr = 1 
 		datas,datelist=SC.list_by_date(Ticker,para,df) #Data in thousand of CLP
 		if len(datelist)>3 and datas[-1]==datas[-1]:
 			if check_year == True and ((curr_date.year-datelist[-1]//100)>1 or (curr_date.month-(datelist[-1]-(datelist[-1]//100)*100))>6):
-				parameter.append(-999999999999999)
+				parameter.append(-999999999999999)#To differentiate garbage data we replace it with impossible number
 				if debug == True:
 					print (Ticker +' does not report anymore (since '+str(datelist[-1])+')\n')
 			else:

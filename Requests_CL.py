@@ -446,7 +446,7 @@ def read_xblr(folder,fin_dat_list,month,year):
             fin_dat=['', 0.0, '12', 0]
             for i in range (0,len(fin_dat_list)):
                 fin_dat=['', 0.0, '12', 0]
-                found = 0 #Hardcoded msot common names for faster processing
+                found = 0 #Hardcoded most common names for faster processing
                 for tag in tag_list:
                     #print(tag.name)
                     #try:
@@ -621,9 +621,10 @@ def all_companies(lista,folder,month,year,monthup=0,yearup=0,update=0,updatemont
             all_stocks_all_dates=pd.concat([df, all_stocks_all_dates], ignore_index=True)
             all_stocks_all_dates.drop_duplicates(inplace = True,keep = 'last',subset = ['code'] ) 
             all_stocks_all_dates.to_csv(folder+file_name,index = None, header=True)
-            print('Database file '+ folder +file_name + 'written')
+            print('Database file '+ folder +file_name + ' written')
         except IOError:
             print('Database file '+ folder +file_name + 'does not exist')
+    os.chdir('../../../..')
     #if monthup == 0 or yearup == 0:
     #    all_banks(folder+'Banks/',month,year)
     #else:

@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import glob
 import numpy as np
+from lxml import etree
 import lxml.html as lh
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -88,6 +89,56 @@ def get_4f(wd, ticker_list, number = 1):
             print("Ticker "+str(ticker)+" not found in CIK list") 
 
 
-wd=os.getcwd()
-ticker_list = ['AMZN','KO',234]
-get_4f(wd, ticker_list, number = 5)
+def read_4f(folder, param_list):    
+    results=[]
+    os.chdir(folder)
+    for file in glob.glob("*.xml"):
+        fillings = etree.parse(file)      
+        for param in param_list:            
+            params = fillings.xpath('//'+param) 
+            for fparam in params:
+                results.append(fparam.text)
+        #fillings = parser.close()
+        stock = fillings.findall('//'+'nonDerivativeHolding')
+        for shares in stock:
+            try:
+                share=shares.find('postTransactionAmounts')
+                try:
+                    shar=share.find('sharesOwnedFollowingTransaction')
+                    try:
+                        sha=shar.find('value')            
+                    except:
+                        continue
+                except:
+                    continue
+            except:
+                continue
+            print(sha.text)
+        stock = fillings.findall('//nonDerivativeTransaction')
+        for shares in stock:
+            try:
+                dates=shares.find('transactionDate')
+                share = shares.find('transactionAmounts')
+                try:
+                    date=dates.find('value')
+                    sharn=share.find('transactionShares')
+                    nshares=sharn.find('value')
+                    print(date.text + '    ' + nshares.text)
+                except:
+                    print("Transaction info not found for file"+file)
+                    continue
+            except:
+                print("Transaction not found for file"+file)
+                continue
+    print(results)
+
+#list_of_param
+#wd=os.getcwd()
+basic_param = ['issuerCik','issuerTradingSymbol','rptOwnerCik','isDirector','isOfficer','isTenPercentOwner','isOther','officerTitle']
+
+trans_param = ['nonDerivativeHolding']
+
+folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/AMZN/"
+#ticker_list = ['AMZN','KO',234]
+#get_4f(wd, ticker_list, number = 5)
+read_4f(folder, basic_param)
