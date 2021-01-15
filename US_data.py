@@ -123,7 +123,9 @@ def read_4f(folder, param_list):
                     date=dates.find('value')
                     sharn=share.find('transactionShares')
                     nshares=sharn.find('value')
-                    print(date.text + '    ' + nshares.text)
+                    sharevalue = share.find('transactionPricePerShare')
+                    shareval = sharevalue.('value')
+                    print(date.text + '    ' + nshares.text + '   ' + shareval.text)
                 except:
                     print("Transaction info not found for file"+file)
                     continue

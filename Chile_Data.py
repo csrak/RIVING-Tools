@@ -268,7 +268,7 @@ def scrap_fillings(urls,filenames,update=0):
 #Function read_data  rescues previously saved data from csv
 #Data is saved as a pandas DataFrame and returned
 #
-
+#Using work directoty is optional, if not given will be determined on the fly
 def read_data(filename,datafold='/',wd=0):
     if wd==0:
         wd=os.getcwd()

@@ -353,7 +353,7 @@ def rec_turn(ticker,df,date=0):#Receivable Turnover
 			rec_turn.append(credit_sales/accounts_receivable[i+1])
 	return rec_turn, datelist1
 
-def CCO(): #W.I.P
+def CCO(df): #W.I.P
 	start=time.time()
 	dios,datelist=DIO('SQM',df)
 	dsos,datelist=DSO('SQM',df)
@@ -362,6 +362,13 @@ def CCO(): #W.I.P
 		print(dios[i]+dsos[i]-dpos[i])
 	print(time.time()-start)
 	return 'not yet'
+
+
+
+	
+	
+
+
 
 
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#

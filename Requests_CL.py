@@ -1,3 +1,5 @@
+# pylint: disable=E1101
+
 import requests
 import lxml.html as lh
 import pandas as pd
@@ -13,6 +15,7 @@ import PyPDF2
 import Chile_Data as CL
 #import live_data as live
 from zipfile import ZipFile
+from zipfile import BadZipFile
 import fnmatch
 import time
 
@@ -820,6 +823,84 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
     df_col=pd.concat([df_col,df_col2], ignore_index=True, axis=1)
     df_col.to_csv(folder+'bank_parameters_since_'+str(month)+'-'+str(year)+'.csv', index = None, header=True)
     df1.to_csv(folder+'bank_database_since_'+str(month)+'-'+str(year)+'.csv', index = None, header=True)
+
+
+def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, series = 'A',types = [1,2,3],to_file = False):
+
+    #Function to get dividends of chilean companies in between a range of years
+    #By default obtains sum of dividends per year of all tickers, but more information is available see: "ticker" option*
+    #folder is usually the "/Data/Chile/" folder
+    #Year_i is year since when we will retrieve dividend history, year_f is by defect the present year but can be changed
+    #ticker option: enables the user to retrieve only a single company instead of all of them this provides more detailed information
+    #Trimester: Selects a specific trimester for the list of tickers, very few reasons to use outside of debugging database
+    #Series: select the type of shares we want, by defect it is A, it can also be empty, it is not possible to tell the function not to consider universal series (companies with single type of shares)
+    #Types: Type of dividend to be selected, by default there is no disctintion
+    ##    1:Provisory (decided before quarter end), 2: Minimum (30% of net utilities), 3: Eventual (Extra dividends, not periodic)
+    if year_f == 0:
+        year_f=CL.datetime.now().year
+    elif (year_f-year_i)<0:
+        print("Please enter an initial year that is before the final or current year")
+        return
+    if trimester == 0:
+        month = 3
+    else:
+        month = trimester*3
+    file_name='registered_stocks_TICKER'+str(month).zfill(2)+'-'+str(year_f-1)+'.csv' #We read a specific list of tickers registered a specific trimester
+                                                                                      #We select 1 year before the last one, in case the latest year do not have finished trimesters 
+    df1=CL.read_data(file_name,datafold+"/Ticker_data/",1)
+    if ticker != '':
+        df1=df1.loc[df1['Ticker']==ticker]
+    tickers = df1['Ticker'].tolist()
+    ruts = df1['Rut'].tolist()        
+    final_dataframe = []
+    counter = 0
+    for rut in ruts:
+        if "ERROR" in rut:
+            counter = counter + 1
+            continue
+        agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+        url = "https://www.cmfchile.cl/institucional/estadisticas/acc_dividendos1grid.php?lang=es&sociedad%5B%5D="+rut[:-2]+"&tipodiv=0&mes=0&anno="+str(year_i)+"&mes2=0&anno2="+str(year_f)+"&xls=y&semana=&vsn=2"
+        print("Parsing url: " + url)
+        print('Ticker: '+ tickers[counter])
+        page = requests.get(url, headers=agent)  
+        try:
+            df = pd.read_excel(page.content,header = 6, engine = "openpyxl")    #It is a xlsx file first 7 rows are junk data    
+        except BadZipFile:
+            counter = counter + 1
+            continue
+        df = df[(df['Serieafecta'] == series) |( df['Serieafecta'] == 'U')] #We select chosen series and universal ones (Traded companies with A, B, etc. shares do not have U, and vice-versa)
+        df = df[df['Tipodedividendo(1)'].isin(types)]
+        df['Year']= pd.DatetimeIndex(df['Fecha']).year #We care about the year
+        df['Dividends'] = df.iloc[:,12]*df['Tasadecambio'] # We multiply column nr 12 (dividend amount) by the exchange rate at the original date to get CLP
+        df_f = df[['Year','Dividends']].groupby(['Year']).sum() #We sum all the dividends decided on each year
+        real_years = df_f.shape[0] #In case one of the inputed years do not exists, which may be common we see how many there are
+        filled_ticker = [tickers[counter]]*real_years #List of same ticker name, list is real_years long
+        for typesh in types: #We check for each type of dividend
+            type_column = []
+            name = 'Type '+str(typesh)
+            for real_year in df_f.index:   #We check for each year
+                type_column.append(df[(df['Tipodedividendo(1)'] == typesh) & (df['Year'] == float(real_year))].shape[0]) #We count how many we summed (to know if some are yet to come, or frequency)
+            df_f[name] = type_column
+        df_f['Ticker'] = filled_ticker #We add a column with the ticker name (ignoring series)
+        final_dataframe.append(df_f) #Append to list od dataframes
+        counter = counter + 1 #needed to keep the count of tickers
+    result = pd.concat(final_dataframe)
+    if to_file == True: #Save to file usually at Data/Chile/Dividends/
+        if not os.path.exists(datafold+'Dividends/'): 
+            os.mkdir(datafold+'Dividends/')
+        file_name='Dividends_'+ticker+'_'+str(year_i)+'_'+str(year_f)+'.csv'
+        result.to_csv(datafold+'Dividends/'+file_name, header=True)
+    return result #Return the dataframe
+
+
+
+
+#wd=os.getcwd()   
+#datafold='/Data/Chile/'
+#print(scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
+
+
+
 
 #update_database
 
