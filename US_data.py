@@ -89,58 +89,113 @@ def get_4f(wd, ticker_list, number = 1):
             print("Ticker "+str(ticker)+" not found in CIK list") 
 
 
-def read_4f(folder, param_list):    
-    results=[]
+def read_4f(folder, param_list, param_def_list = []):
+    #Input folder and optional parameters derired
+    #Non-optional parameters such as date, nr of shares, share value, two codes of transaction and holdings are always obtained
+    #As an option it is possible to add a default value to the param_list in case one of the values is not found
+    #By default it is just filled with np.nan 
+    if param_def_list == []:
+        param_def_list = [np.nan for par in param_list]
+    elif len(param_def_list) != len(param_list):
+        raise Exception("Please use a full default parameter list or don't use it at all") 
     os.chdir(folder)
-    for file in glob.glob("*.xml"):
+    list_df = []
+    for file in glob.glob("*.xml"): 
         fillings = etree.parse(file)      
-        for param in param_list:            
+        results=[]
+        c = 0
+        for param in param_list:   
             params = fillings.xpath('//'+param) 
-            for fparam in params:
-                results.append(fparam.text)
+            if len(params) == 1:                  
+                results.append(params[0].text)
+            elif len(params) == 0:
+                results.append(param_def_list[c])
+            else:
+                raise Exception("Unexpected multiple instances of ",param, 'in file ', file) #Optional parameters should only have one instance per file, which is why this is checked
+            c = c+1         
         #fillings = parser.close()
-        stock = fillings.findall('//'+'nonDerivativeHolding')
-        for shares in stock:
+        holdings = fillings.findall('//'+'nonDerivativeHolding')
+        total_hold = 0.0
+        for holding in holdings: #Holding sum
             try:
-                share=shares.find('postTransactionAmounts')
+                holdin=holding.find('postTransactionAmounts')
                 try:
-                    shar=share.find('sharesOwnedFollowingTransaction')
+                    holdi=holdin.find('sharesOwnedFollowingTransaction')
                     try:
-                        sha=shar.find('value')            
+                        hold=holdi.find('value')            
                     except:
+                        print("Holding info not found for file"+file)
                         continue
-                except:
+                except:                   
+                    print("Holding info not found for file"+file)
                     continue
             except:
+                print("Holding info not found for file"+file)
                 continue
-            print(sha.text)
-        stock = fillings.findall('//nonDerivativeTransaction')
-        for shares in stock:
+            total_hold = float(hold.text)+total_hold #We get the total holdings in not transactioned accounts
+        results = [total_hold]+results #We will create a list of list to form each row of the df, elements until now are common so will be
+                                        # appended to all elements from this file
+
+        stock = fillings.findall('//nonDerivativeTransaction')        
+        #derivatives = fillings.find('//derivativeTable')
+        derivatives = fillings.findall('//derivativeTransaction')
+
+        for shares in stock: #Non-derivative transaction parser
+            data = [np.nan,np.nan,np.nan,np.nan,np.nan]
             try:
                 dates=shares.find('transactionDate')
                 share = shares.find('transactionAmounts')
+                coding = shares.find('transactionCoding')
                 try:
                     date=dates.find('value')
                     sharn=share.find('transactionShares')
                     nshares=sharn.find('value')
                     sharevalue = share.find('transactionPricePerShare')
-                    shareval = sharevalue.('value')
-                    print(date.text + '    ' + nshares.text + '   ' + shareval.text)
+                    shareval = sharevalue.find('value')                    
+                    code = coding.find('transactionCode')
+                    acquiredordisposed=share.find('transactionAcquiredDisposedCode')
+                    acquiredordisposed = acquiredordisposed.find('value')
+                    data = [date.text,acquiredordisposed.text,float(nshares.text),float(shareval.text),code.text]
                 except:
                     print("Transaction info not found for file"+file)
                     continue
             except:
                 print("Transaction not found for file"+file)
                 continue
-    print(results)
+            data = data+results
+            list_df.append(data)
+        for shares in derivatives:
+             #derivative transaction parser
+            try:
+                dates=shares.find('transactionDate')
+                share = shares.find('transactionAmounts')
+                coding = shares.find('transactionCoding')
+                try:
+                    date=dates.find('value')
+                    sharn=share.find('transactionShares')
+                    nshares=sharn.find('value')
+                    sharevalue = share.find('transactionPricePerShare')
+                    shareval = sharevalue.find('value')                    
+                    code = coding.find('transactionCode')
+                    print(date.text + '    ' + nshares.text + '   ' + shareval.text+ '   ' + code.text)
+                except:
+                    print("Transaction info not found for file"+file)
+                    continue
+            except:
+                print("Transaction not found for file"+file)
+                continue
+    table = pd.DataFrame(list_df,columns=(['date','acquiredordisposed','shares','price','code','staticholdings']+param_list))
+    print(table)
+    return table
 
 #list_of_param
 #wd=os.getcwd()
 basic_param = ['issuerCik','issuerTradingSymbol','rptOwnerCik','isDirector','isOfficer','isTenPercentOwner','isOther','officerTitle']
+def_basic_param = [np.nan,'',np.nan,0,0,0,0,'']
 
 trans_param = ['nonDerivativeHolding']
 
 folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/AMZN/"
 #ticker_list = ['AMZN','KO',234]
 #get_4f(wd, ticker_list, number = 5)
-read_4f(folder, basic_param)
+read_4f(folder, basic_param,def_basic_param)

@@ -942,7 +942,7 @@ def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, s
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')
-#all_companies(lista,wd+datafold,'03','2020',update=1,updatemonth='03',updateyear='2013')
+#all_companies(lista,wd+datafold,'09','2020',update=1,updatemonth='03',updateyear='2013')
 #read_xblr(wd+datafold+'03-2019/AESGENER_03-2019/',lista,'03','2019')
 #print(res)
 #print(listafinal)

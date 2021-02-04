@@ -13,6 +13,7 @@ USDtoCLP=830.0 #Must be replaced with a function later
 
 
 def basic_dcf(ticker,df):
+	ticker = ticker.upper()
 	data='net operating cashflows'
 	op_cash,datelist=scl.list_by_date(ticker, data,df)
 	data='cash'
@@ -66,7 +67,7 @@ if test == 0:
 	model_all_0(df)
 ############################ Ignore everything under ths line
 else:
-	ticker='RIPLEY'
+	ticker='ILC'
 	basic_dcf(ticker,df)
 	data='net operating cashflows'
 	datas,datelist=scl.list_by_date(ticker, data,df)
@@ -74,13 +75,18 @@ else:
 	data='revenue'
 	datas,datelist=scl.list_by_date(ticker, data,df)
 	scl.plot_data_time(datelist,datas)
+	data='net profit'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	scl.plot_data_time(datelist,datas)
+	data='cost of sales'
+	data2='revenue'
+	datas,datelist=scl.list_by_date(ticker, data,df)
+	datas2,datelist=scl.list_by_date(ticker, data2,df)
+	scl.plot_data_time(datelist,datas,datas2)
 	data='equity'
 	datas,datelist=scl.list_by_date(ticker, data,df)
 	scl.plot_data_time(datelist,datas)
 	data='inventories'
-	datas,datelist=scl.list_by_date(ticker, data,df)
-	scl.plot_data_time(datelist,datas)
-	data='net profit'
 	datas,datelist=scl.list_by_date(ticker, data,df)
 	scl.plot_data_time(datelist,datas)
 	data='assets'

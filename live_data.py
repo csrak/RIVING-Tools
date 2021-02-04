@@ -74,11 +74,20 @@ def mw_quote_CL(ticker): #Obtain quote from marketwatch finance
     if not summary_table:
         quote=np.nan
     else:
-        quote=float(summary_table[0].replace(',',''))     
+        quote=(summary_table[0].replace(',',''))     
+        quote=float(summary_table[0].replace('$','')) 
     return quote
 
-def yahoo_quote_CL(ticker): #Obtain quote from yahoo finance
-    ticker2=ticker.replace(' ','')+'.SN'
+def yahoo_quote_CL(ticker,series = ''): #Obtain quote from yahoo finance
+    if series == '':
+        ticker2=ticker.replace(' ','')+'.SN'
+    elif series.lower() == 'a':        
+        ticker2=ticker.replace(' ','')+'-A.SN'
+    elif series.lower() == 'b':  
+        ticker2=ticker.replace(' ','')+'-B.SN'
+    else: 
+        print('Select a valid share series')
+        return np.nan,
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = "http://finance.yahoo.com/quote/%s?p=%s"%(ticker2,ticker2)
     response = requests.get(url, headers=agent,verify=False)
@@ -89,19 +98,6 @@ def yahoo_quote_CL(ticker): #Obtain quote from yahoo finance
        quote=np.nan
     else:
         quote=float(summary_table[0].replace(',',''))
-    return quote
-def yahoo_quoteA_CL(ticker): #Obtain quote from yahoo finance
-    ticker2=ticker.replace(' ','')+'-A.SN'
-    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-    url = "http://finance.yahoo.com/quote/%s?p=%s"%(ticker2,ticker2)
-    response = requests.get(url, headers=agent,verify=False)
-    print ("Parsing %s"%(url))
-    parser = lh.fromstring(response.text)
-    summary_table = parser.xpath('//span[contains(@class,"Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)")]//text()')   
-    if not summary_table:
-        quote=np.nan
-    else:
-        quote=float(summary_table[0].replace(',',''))     
     return quote
 
 def barron_quoteA_CL(ticker): #Obtain quote from yahoo finance
@@ -200,20 +196,42 @@ def barron_quote_CL(ticker): #Obtain quote from yahoo finance
     return quote,market_cap
 
 
-def live_quote_cl(ticker):
-    quote,market_cap=barron_quote_CL(ticker)
-    if quote!=quote or market_cap==0:
-        quote,market_cap=barron_quoteB_CL(ticker)
-    if quote!=quote or market_cap==0:
-        quote,market_cap=barron_quoteA_CL(ticker)
-    if quote!=quote or quote==0:
-        quote=yahoo_quote_CL(ticker)
-    if quote!=quote or quote==0:
-        quote=yahoo_quoteA_CL(ticker)
-    if quote!=quote or quote==0:
-        quote=mw_quote_CL(ticker)
-    if market_cap==0:
-        market_cap=np.nan
+def live_quote_cl(ticker, series = 'u'):
+    #We hardcode LTM because of specific change in ticker
+    if series.lower() == 'a':
+        quote,market_cap=barron_quote_CL(ticker)
+        if quote!=quote or market_cap==0:
+            quote,market_cap=barron_quoteA_CL(ticker)
+        if quote!=quote or quote==0:            
+            quote=yahoo_quote_CL(ticker)
+            if quote!=quote or quote==0:
+                quote=yahoo_quote_CL(ticker,'A')
+                if quote!=quote or quote==0:
+                    quote=mw_quote_CL(ticker)
+        if market_cap==0:
+            market_cap=np.nan
+    elif series.lower() == 'b':
+        quote,market_cap=barron_quote_CL(ticker)
+        if quote!=quote or market_cap==0:
+            quote,market_cap=barron_quoteB_CL(ticker)
+        if quote!=quote or quote==0:            
+            quote=yahoo_quote_CL(ticker)
+            if quote!=quote or quote==0:
+                quote=yahoo_quote_CL(ticker,'B')
+                if quote!=quote or quote==0:
+                    quote=mw_quote_CL(ticker)
+        if market_cap==0:
+            market_cap=np.nan
+    else:
+        quote,market_cap=barron_quote_CL(ticker)
+        if quote!=quote or quote==0:            
+            quote=yahoo_quote_CL(ticker)
+            if quote!=quote or quote==0:
+                quote=mw_quote_CL(ticker)
+        if market_cap==0:
+            market_cap=np.nan
+        print('Warning: No Series selected for live price determination')
+        print('Only shares with "U" type series were retrieved')
     return float(quote),float(market_cap)
 
         #return quote
