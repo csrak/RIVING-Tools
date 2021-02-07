@@ -39,36 +39,51 @@ def sec_list(wd, update = 1):
 def scrap_4f(cik, number = 1,skip = 0, folder = 0):
     #We give a single cik of the company to retrieve 
     #number is the amount of fillings we want (selecting dates will be added later)
-    #skip is how many of the initial ones we don't want, we will retrieve "number" amount of the ones after these
+    #"skip" is how many of the initial ones we don't want, we will retrieve a "number" amount of the ones after the first "skip" number
     #folder option lets you download to an exsiting folder instead of just retrieving link
-    number = number + skip
-    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-    url='https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+cik+'&type=&dateb=&owner=only&count=100&search_text='
-    page = requests.get(url, headers=agent) 
-    page=lh.fromstring(page.content)
-    #We obtain every <a and take the URLS to a list
-    link = page.xpath('//a')
-    out=[np.nan]*number  
-    #We search the search page for 4 fillings (first 100 results due to url)
     c = 0
-    for links in link:
-        if c >= number:
+    number = number + skip
+    start = 0
+    out=[np.nan]*number
+    link=[]
+    while c < number:
+        agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+        url='https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+cik+'&type=&dateb=&owner=only&start='+str(start)+'&count='+str(start+100)+'&search_text='
+        page = requests.get(url, headers=agent) 
+        page=lh.fromstring(page.content)
+        #We obtain every <a and take the URLS to a list
+        link = page.xpath('//a')
+        #We search the search page for 4 fillings (first 100 results due to url)
+        for links in link:
+            if c >= number:
+                break
+            if 'href' in links.attrib and '/Archives/edgar/data/' in links.attrib['href']:
+                separators = [pos for pos, char in enumerate(links.attrib['href']) if char == '/']
+                out[c]='https://www.sec.gov'+(links.attrib['href'])[0:separators[-1]]
+                c+=1    
+            #else:
+            #     print("Link not found in : ", url)
+        if folder != 0 and os.path.exists(folder):
+            for i in range(start,c):  
+                if i<skip:
+                    continue
+                page = requests.get(out[i], headers=agent) 
+                page=lh.fromstring(page.content)
+                #We obtain every <a and take the URLS to a list
+                filess = page.xpath('//a')
+                file_link = out[i]
+                for files in filess:
+                    if 'href' in files.attrib and ".xml" in files.attrib['href']:
+                        file_link = 'https://www.sec.gov'+files.attrib['href']
+                        break
+                myfile = requests.get(file_link, headers=agent)         
+                separators = [pos for pos, char in enumerate(file_link) if char == '/']
+                name=file_link[separators[-2]:separators[-1]]            
+                open(folder +name+'.xml', 'wb').write(myfile.content)
+        if len(link)<100:
             break
-        if 'href' in links.attrib and '/Archives/edgar/data/' in links.attrib['href']:
-            separators = [pos for pos, char in enumerate(links.attrib['href']) if char == '/']
-            out[c]='https://www.sec.gov'+(links.attrib['href'])[0:separators[-1]]
-            c+=1       
-    if folder != 0 and os.path.exists(folder):
-        for i in range(number):                 
-            myfile = requests.get(out[i+skip] +'/form4.xml', headers=agent)
-            if 'The specified key does not exist' in str(myfile.content):
-                out[i+skip] = out[i+skip] +'/doc4.xml'  #different name, changed in list
-                myfile = requests.get(out[i+skip], headers=agent)
-            else:
-                out[i+skip] = out[i+skip] +'/form4.xml'            
-            separators = [pos for pos, char in enumerate(out[i+skip]) if char == '/']
-            name=out[i+skip][separators[-2]:separators[-1]]            
-            open(folder +name+'.xml', 'wb').write(myfile.content)
+        else:
+            start+=100
     return out[skip:]
 
 
@@ -78,6 +93,7 @@ def get_4f(wd, ticker_list, number = 1):
     tck_list = sec_list(wd, update = 0)
     #print(tck_list)
     for ticker in ticker_list:
+        print("Downloading 4F fillings for ", ticker)
         try:
             cik=tck_list.loc[pd.Index(tck_list['ticker']).get_loc(str(ticker).lower()),'cik']
             #print(cik)
@@ -89,11 +105,15 @@ def get_4f(wd, ticker_list, number = 1):
             print("Ticker "+str(ticker)+" not found in CIK list") 
 
 
-def read_4f(folder, param_list, param_def_list = []):
+def read_4f(folder_i, param_list, param_def_list = [],company = "", to_file = False):
     #Input folder and optional parameters derired
     #Non-optional parameters such as date, nr of shares, share value, two codes of transaction and holdings are always obtained
     #As an option it is possible to add a default value to the param_list in case one of the values is not found
     #By default it is just filled with np.nan 
+    if company != "":
+        folder = folder_i+company
+    else:
+        company = "database"
     if param_def_list == []:
         param_def_list = [np.nan for par in param_list]
     elif len(param_def_list) != len(param_list):
@@ -111,7 +131,8 @@ def read_4f(folder, param_list, param_def_list = []):
             elif len(params) == 0:
                 results.append(param_def_list[c])
             else:
-                raise Exception("Unexpected multiple instances of ",param, 'in file ', file) #Optional parameters should only have one instance per file, which is why this is checked
+                print("Unexpected multiple instances of ",param, 'in file ', file) #Optional parameters should only have one instance per file, which is why this is checked
+                results.append(params[0].text)
             c = c+1         
         #fillings = parser.close()
         holdings = fillings.findall('//'+'nonDerivativeHolding')
@@ -146,7 +167,10 @@ def read_4f(folder, param_list, param_def_list = []):
                 dates=shares.find('transactionDate')
                 share = shares.find('transactionAmounts')
                 coding = shares.find('transactionCoding')
+                post = shares.find('postTransactionAmounts')
                 try:
+                    postt = post.find('sharesOwnedFollowingTransaction')
+                    posttt = postt.find('value')
                     date=dates.find('value')
                     sharn=share.find('transactionShares')
                     nshares=sharn.find('value')
@@ -155,14 +179,14 @@ def read_4f(folder, param_list, param_def_list = []):
                     code = coding.find('transactionCode')
                     acquiredordisposed=share.find('transactionAcquiredDisposedCode')
                     acquiredordisposed = acquiredordisposed.find('value')
-                    data = [date.text,acquiredordisposed.text,float(nshares.text),float(shareval.text),code.text]
+                    data = [date.text,acquiredordisposed.text,float(nshares.text),float(shareval.text),code.text,posttt.text]
                 except:
                     print("Transaction info not found for file"+file)
                     continue
             except:
                 print("Transaction not found for file"+file)
                 continue
-            data = data+results
+            data = data+[0]+results #0 is for indicating it is non-derivative
             list_df.append(data)
         for shares in derivatives:
              #derivative transaction parser
@@ -177,25 +201,41 @@ def read_4f(folder, param_list, param_def_list = []):
                     sharevalue = share.find('transactionPricePerShare')
                     shareval = sharevalue.find('value')                    
                     code = coding.find('transactionCode')
-                    print(date.text + '    ' + nshares.text + '   ' + shareval.text+ '   ' + code.text)
+                    #print(date.text + '    ' + nshares.text + '   ' + shareval.text+ '   ' + code.text)
                 except:
                     print("Transaction info not found for file"+file)
                     continue
             except:
                 print("Transaction not found for file"+file)
                 continue
-    table = pd.DataFrame(list_df,columns=(['date','acquiredordisposed','shares','price','code','staticholdings']+param_list))
-    print(table)
+    table = pd.DataFrame(list_df,columns=(['date','acquiredordisposed','shares','price','code','postransaction','derivative','staticholdings']+param_list))
+    #print(table)
+    if to_file == True:
+        table.to_csv("4f_"+company+".csv", index = None, header=True)
+    os.chdir(folder)
     return table
 
+def make_all_4f(datafold):
+    basic_param = ['issuerCik','issuerTradingSymbol','rptOwnerCik','isDirector','isOfficer','isTenPercentOwner','isOther','officerTitle']
+    def_basic_param = [np.nan,'',np.nan,0,0,0,0,'']
+    os.chdir(datafold)
+    for folder in os.listdir(datafold):
+        read_4f(datafold, basic_param,def_basic_param,company = folder,to_file = True)
+    print("Goodbye")
+
+
+
 #list_of_param
-#wd=os.getcwd()
-basic_param = ['issuerCik','issuerTradingSymbol','rptOwnerCik','isDirector','isOfficer','isTenPercentOwner','isOther','officerTitle']
-def_basic_param = [np.nan,'',np.nan,0,0,0,0,'']
+def run():
+    wd=os.getcwd()
+    folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/"
+    #ticker_list = ['SQM',234]
+    ticker_list=nasdaq_list(wd)
+    a = ticker_list.index("amwd")
+    get_4f(wd, ticker_list[a:], number = 800)
+    #read_4f(folder, basic_param,def_basic_param,company = "AMZN",to_file = True)
+    make_all_4f(folder)
 
-trans_param = ['nonDerivativeHolding']
-
-folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/AMZN/"
-#ticker_list = ['AMZN','KO',234]
-#get_4f(wd, ticker_list, number = 5)
-read_4f(folder, basic_param,def_basic_param)
+run()
+#folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/"
+#make_all_4f(folder)

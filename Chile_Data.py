@@ -269,14 +269,18 @@ def scrap_fillings(urls,filenames,update=0):
 #Data is saved as a pandas DataFrame and returned
 #
 #Using work directoty is optional, if not given will be determined on the fly
-def read_data(filename,datafold='/',wd=0):
+def read_data(filename,datafold='/',wd=0, oparse_dates = []):
     if wd==0:
         wd=os.getcwd()
     else:
         wd=''
     if os.path.exists(wd+datafold+filename):
-        df=pd.read_csv(wd+datafold+filename, header=0)
-        df = df.astype(str)
+        if oparse_dates == []:
+            df=pd.read_csv(wd+datafold+filename, header=0)
+            df = df.astype(str)
+        else:
+            df=pd.read_csv(wd+datafold+filename, header=0,parse_dates = oparse_dates)
+            df = df.astype(str)
     else:
         raise SystemExit('File not found in '+ wd+datafold+filename) 
     
