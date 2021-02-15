@@ -20,7 +20,7 @@ def date_columns_summary(tickers,columns,df,path='',country='CL'):
         final_df = pd.concat([final_df,company_df], axis=1)
     name = 'Summary('+country+'-'+str(len(columns))+'-'+str(len(tickers))+')_since_'+str(final_df.index.min())[-2:]+'_'+str(final_df.index.min())[:-2]+'.csv'
     if path == '':
-        path = '\ML_output\\'
+        path = '/ML_output/'
     final_df.to_csv(os.getcwd()+path+name)
 #PD. If it gives you an permission denied error, make sure you have permission to change/write in the given directory
 
@@ -43,12 +43,26 @@ columns = ['revenue','operating profit','liabilities',
 
 print('Start :D'+'\n')
 
-#date_columns_summary(tickers,columns,df)
+date_columns_summary(tickers[0:2],columns[0:2],df)
 
-datafold = '\ML_output\\'
+datafold = '/ML_output/'
 file_name = 'Summary(CL-6-201)_since_03_2013.csv'
 
 df = read_summary(file_name,datafold)
-#print(df)
+print(df)
+#company_df = df['IANSA']
+#print(company_df)
+#company_df['dates'] = company_df.index.to_numpy()
+#company_df['dates'] = company_df['dates'].apply(lambda x: x.strftime('%Y%m'))
+#dates = company_df.index.to_numpy()
+#company_df = company_df.reset_index()
+#company_df = company_df.apply(lambda x: x.strftime('%Y-%m'))
+
+#new_index = pd.to_datetime(company_df.index.values, format='%Y%m')
+#print(new_index)
+#company_df = company_df.set_index(new_index)
+#company_df = company_df.index.apply(lambda x: print(x))
+#print(company_df)
+
 
 print('End :D'+'\n')
