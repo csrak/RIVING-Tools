@@ -120,8 +120,19 @@ def read_4f(folder_i, param_list, param_def_list = [],company = "", to_file = Fa
         raise Exception("Please use a full default parameter list or don't use it at all") 
     os.chdir(folder)
     list_df = []
+    if (len(glob.glob("*.xml")) < 1):
+        for f in glob.glob("*"):
+            os.chdir(folder_i)
+            print("removing ", f)
+            os.remove(folder+'/'+f)
+        try:
+            print("and directory ",folder)
+            os.rmdir(folder)
+        except OSError as e:
+            print("Error: %s : %s" % (folder, e.strerror))
+        return
     for file in glob.glob("*.xml"): 
-        fillings = etree.parse(file)      
+        fillings = lh.parse(file)      
         results=[]
         c = 0
         for param in param_list:   
@@ -212,7 +223,7 @@ def read_4f(folder_i, param_list, param_def_list = [],company = "", to_file = Fa
     #print(table)
     if to_file == True:
         table.to_csv("4f_"+company+".csv", index = None, header=True)
-    os.chdir(folder)
+    os.chdir(folder_i)
     return table
 
 def make_all_4f(datafold):
@@ -220,6 +231,7 @@ def make_all_4f(datafold):
     def_basic_param = [np.nan,'',np.nan,0,0,0,0,'']
     os.chdir(datafold)
     for folder in os.listdir(datafold):
+        print("Reading: ", folder)
         read_4f(datafold, basic_param,def_basic_param,company = folder,to_file = True)
     print("Goodbye")
 
@@ -231,8 +243,9 @@ def run():
     folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/"
     #ticker_list = ['SQM',234]
     ticker_list=nasdaq_list(wd)
-    a = ticker_list.index("amwd")
-    get_4f(wd, ticker_list[a:], number = 800)
+    a = ticker_list.index("itrn")
+    #get_4f(wd, ticker_list[a:], number = 800)
+    #get_4f(wd, 'tsla', number = 800)
     #read_4f(folder, basic_param,def_basic_param,company = "AMZN",to_file = True)
     make_all_4f(folder)
 
