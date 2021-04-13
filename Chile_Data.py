@@ -6,6 +6,7 @@
 
 
 import requests
+import sys
 import live_data as ld
 import time
 import glob
@@ -74,21 +75,45 @@ def scrap_company_Links(companies_list,month, year):
 
 
 def scrap_file_links(url,filet):
+    out=''
     if filet==999:
         return 'Invalid Link'
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36'}
+    #Due to connectivity problems with the website a 10 times retry o the connection is done before giving up
+    found = 0
     try:
         page = requests.get(url, headers=agent) 
+        page=lh.fromstring(page.content)
     except requests.exceptions.ConnectionError:
         print("Connection error -> Trying next one")    
         return 'Invalid Link'  
     except:
-        print("Error:"+url+"\n  Trying By chunks")
-        page = ld.get_url_bychunks(url)
-    page=lh.fromstring(page.content)
+        print("Error:"+url+"\n  Trying again")
+        for i in range(1,10):
+            if (found != 0):
+                break
+            elif (i >=9):
+                return out,filet 
+            try:
+                page = requests.get(url, headers=agent) 
+                page=lh.fromstring(page.content)
+                found = 1
+            except requests.exceptions.ConnectionError:
+                print("Connection error -> Trying next one")    
+                return 'Invalid Link'  
+            except KeyboardInterrupt:
+                print('Interrupted')
+                try:
+                    sys.exit(0)
+                except SystemExit:
+                    os._exit(0)
+            except:
+                found = 0
+                print("Error:"+url+"\n  Trying again")   
+    
+    #page=lh.fromstring(page.content)
     #We obtain every <a and take the URLS to a list
     link = page.xpath('//a')
-    out=''
     for link in link:
         
     #Selected format is searched 0=PDF 1=XBLR 2=BOTH
@@ -153,8 +178,27 @@ def scrap_lists(url):
     try:
         page = requests.get(url, headers=agent)
     except:        
-        print("Error:"+url+"\n  Trying By chunks")
-        page = ld.get_url_bychunks(url)
+        print("Error:"+url+"\n  Trying again")
+        for i in range(1,10):
+            if (found != 0):
+                break
+            elif (i >=9):
+                return pd.DataFrame()
+            try:
+                page = requests.get(url, headers=agent) 
+                found = 1
+            except requests.exceptions.ConnectionError:
+                print("Connection error")    
+                return pd.DataFrame() 
+            except KeyboardInterrupt:
+                print('Interrupted')
+                try:
+                    sys.exit(0)
+                except SystemExit:
+                    os._exit(0)
+            except:
+                found = 0
+                print("Error:"+url+"\n  Trying again")  
     doc = lh.fromstring(page.content)#Parse data that are stored between <tr>..</tr> of HTML
     tr_elements = doc.xpath('//tr')
     #Check the length of the first 12 rows
@@ -220,11 +264,29 @@ def scrap_fillings(urls,filenames,update=0):
             else:
                 url=urls[i]
                 agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+                found = 0 
                 try: 
                     myfile = requests.get(url, headers=agent)
-                except: #ChunkedEncodingError or  IncompleteRead        
-                    print("Error:"+url+"\n  Trying By chunks")
-                    myfile = ld.get_url_bychunks(url)
+                except: 
+                    print("Error:"+url+"\n  Trying again")
+                    for i in range(1,10):
+                        if (found != 0):
+                            break
+                        elif (i >=9):
+                            return
+                        try:
+                            myfile = requests.get(url, headers=agent)
+                            found = 1
+                        except KeyboardInterrupt:
+                            print('Interrupted')
+                            try:
+                                sys.exit(0)
+                            except SystemExit:
+                                os._exit(0)
+                        except:
+                            found = 0
+                            print("Error:"+url+"\n  Trying again") 
+                            continue
                 wd=os.getcwd()
                 #folder=Path(wd).parent
                 #print(folder)

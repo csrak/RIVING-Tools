@@ -9,7 +9,6 @@ import time
 import Search_chile as scl
 #############
 rate=10 #in % risk free rate
-USDtoCLP=830.0 #Must be replaced with a function later
 
 
 def basic_dcf(ticker,df):

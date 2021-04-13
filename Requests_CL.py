@@ -939,6 +939,7 @@ def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, s
 #upandgetem('06','2020')
 #upandgetem('09','2020')
 #upandgetem('12','2020')
+#upandgetem('03','2021')
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')

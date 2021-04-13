@@ -6,6 +6,7 @@ import numpy as np
 from lxml import etree
 import lxml.html as lh
 import urllib3
+import time
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def nasdaq_list(wd, update = 1):
@@ -51,6 +52,7 @@ def scrap_4f(cik, number = 1,skip = 0, folder = 0):
         url='https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+cik+'&type=&dateb=&owner=only&start='+str(start)+'&count='+str(start+100)+'&search_text='
         page = requests.get(url, headers=agent) 
         page=lh.fromstring(page.content)
+        time.sleep(0.3) #To not get kicked out of EDGAR
         #We obtain every <a and take the URLS to a list
         link = page.xpath('//a')
         #We search the search page for 4 fillings (first 100 results due to url)
@@ -122,10 +124,10 @@ def read_4f(folder_i, param_list, param_def_list = [],company = "", to_file = Fa
     list_df = []
     if (len(glob.glob("*.xml")) < 1):
         for f in glob.glob("*"):
-            os.chdir(folder_i)
             print("removing ", f)
             os.remove(folder+'/'+f)
         try:
+            os.chdir(folder_i)
             print("and directory ",folder)
             os.rmdir(folder)
         except OSError as e:
@@ -243,8 +245,8 @@ def run():
     folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/"
     #ticker_list = ['SQM',234]
     ticker_list=nasdaq_list(wd)
-    a = ticker_list.index("itrn")
-    #get_4f(wd, ticker_list[a:], number = 800)
+    a = ticker_list.index("vtnr")
+    get_4f(wd, ticker_list[a:], number = 800)
     #get_4f(wd, 'tsla', number = 800)
     #read_4f(folder, basic_param,def_basic_param,company = "AMZN",to_file = True)
     make_all_4f(folder)
