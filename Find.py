@@ -60,7 +60,7 @@ def quarters_to_years(data,dates):
 		
 	return 0
 
-def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, per_share = False,check_year = True, debug = False):	
+def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, per_share = False,check_year = True, debug = False, forward = False):	
 	if check_year == True:
 		curr_date = datetime.datetime.now()
 	#corr min substracts earningsaccording to % ownership in minority stakes of the company, activated by default
@@ -85,6 +85,8 @@ def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, pe
 			except ZeroDivisionError:
 				print("Div by zero: for "+ Ticker+ " and parameter " + para + " Non-controlling correction")
 				corr = 1.
+			if (pd.isnull(corr)):
+				corr = 1.
 		if per_share == True:
 			corr = corr/float(shares[-1])
 		datas,datelist=SC.list_by_date(Ticker,para,df) #Data in thousand of CLP
@@ -96,7 +98,10 @@ def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, pe
 			else:
 				try: 
 					if datas[-2]==datas[-2] and datas[-3]==datas[-3] and datas[-4]==datas[-4] and ((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)!=0:
-						parameter.append((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)
+						if (forward ==True):
+							parameter.append(datas[-1]*4*corr)
+						else:
+							parameter.append((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)
 					else:
 						parameter.append(np.nan*corr)
 				except TypeError:
@@ -109,7 +114,10 @@ def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, pe
 	#print(shares)
 	p_para=np.divide(np.multiply(np.array(prices,dtype=np.float32),np.array(shares,dtype=np.float32)),np.array(parameter,dtype=np.float32))
 	#prices_f[para]=parameter
-	prices_f['price/'+para]=p_para
+	if (forward ==True):
+		prices_f['FP/'+para]=p_para
+	else:
+		prices_f['p/'+para]=p_para
 	if tofile!=0:
 		prices_f.to_csv(filename+'.csv', index = None, header=True)
 	return prices_f
@@ -206,16 +214,28 @@ def dividend_yields(dfile = '', datafolder = '', dataf = []):
 #quaters_to_years(datas,datelist)
 
 #print(rcl.CL.read_data('registered_stocks.csv','/Data/Chile/'))
+
+
 wd=os.getcwd()
 datafold='/Data/Chile/'
 
 prices_to_file(wd+datafold,series = 'A')
 file_name='Database_in_CLP.csv'
-#Ticker='AUSTRALIS'
+#Ticker='ZOFRI'
+#df=rcl.CL.read_data(file_name,wd+datafold,1)
+#a,dl=SC.list_by_date(Ticker,'Non-Controlling Profit',df)
+#print(a)
+#b,dl=SC.list_by_date(Ticker,'Net Profit',df)
+#print(b)
+#print((b[-1]-a[-1])/float(b[-1]))
+
+
 df=rcl.CL.read_data(file_name,wd+datafold,1)
 price_to_parameter(df,'net profit',tofile=1, corr_min = 1,debug = False)
+price_to_parameter(df,'net profit',tofile=1, corr_min = 1,debug = False, forward = True)
 price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = False)
-#price_to_parameter(df,'dividends paid',tofile=1,debug = False) #Not enough data well reported by companies, use dividend_yields instead
+price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = False,forward = True)
+price_to_parameter(df,'dividends paid',tofile=1,debug = False) #Not enough data well reported by companies, use dividend_yields instead
 quick_ratio(df,tofile=1)
 dividend_yields(dfile = 'Dividends__2018_2021.csv', datafolder = wd+datafold, dataf = [])
 

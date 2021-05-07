@@ -66,7 +66,7 @@ if test == 0:
 	model_all_0(df)
 ############################ Ignore everything under ths line
 else:
-	ticker='ILC'
+	ticker='ANDINA'
 	basic_dcf(ticker,df)
 	data='net operating cashflows'
 	datas,datelist=scl.list_by_date(ticker, data,df)

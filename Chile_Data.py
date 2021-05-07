@@ -29,7 +29,7 @@ import shutil
 ###### 
 #    Functions for scraping data, general functions and some hard-code for specific scraping is found here
 #       Specifically for importing data from chilean stocks, into csv file, mostly into ~/data/chile/ folder
-
+agent = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"}
 
 MAXMONTHS=100 # Number maximum of empty urls in between monthly fillings, used to stop checking if user tries to obtain 
               # dates that do not exist
@@ -52,15 +52,42 @@ def getIndexes(dfObj, value):
 
 
 def scrap_company_Links(companies_list,month, year):
-    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-    url='http://www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs.php?mm_ifrs='+month+'&aa_ifrs='+year
-    page = requests.get(url, headers=agent) 
-    page=lh.fromstring(page.content)
+    #agent ={"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+    url='https://www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs.php?mm_ifrs='+month+'&aa_ifrs='+year
+    out=['Not Found']*companies_list.shape[0]
+    found = 0
+    try:
+        page = requests.get(url, headers=agent) 
+        page=lh.fromstring(page.content)
+    except requests.exceptions.ConnectionError:
+        print("Connection error -> Trying next one")    
+        return 'Invalid Link'  
+    except:
+        print("Error:"+url+"\n  Trying again")
+        for i in range(1,10):
+            if (found != 0):
+                break
+            elif (i >=15):
+                return out 
+            try:
+                page = requests.get(url, headers=agent) 
+                page=lh.fromstring(page.content)
+                found = 1
+            except requests.exceptions.ConnectionError:
+                print("Connection error -> Trying next one")    
+                return 'Invalid Link'  
+            except KeyboardInterrupt:
+                print('Interrupted')
+                try:
+                    sys.exit(0)
+                except SystemExit:
+                    os._exit(0)
+            except:
+                found = 0
+                print("Error:"+url+"\n  Trying again")   
 
     #We obtain every <a and take the URLS to a list
-    link = page.xpath('//a')
-    out=['Not Found']*companies_list.shape[0]
-    
+    link = page.xpath('//a')    
         
     #Selected format is searched 0=PDF 1=XBLR 2=BOTH
     for link in link:
@@ -68,7 +95,7 @@ def scrap_company_Links(companies_list,month, year):
             rut=companies_list.loc[i,'Rut']
             if 'href' in link.attrib and rut in link.attrib['href']:
                 out[i]=link.attrib['href']
-                out[i]='http://www.cmfchile.cl/institucional/mercados/'+ out[i]               
+                out[i]='https://www.cmfchile.cl/institucional/mercados/'+ out[i]               
             
                 
     return out
@@ -78,7 +105,7 @@ def scrap_file_links(url,filet):
     out=''
     if filet==999:
         return 'Invalid Link'
-    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36'}
+    #agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36'}
     #Due to connectivity problems with the website a 10 times retry o the connection is done before giving up
     found = 0
     try:
@@ -92,7 +119,7 @@ def scrap_file_links(url,filet):
         for i in range(1,10):
             if (found != 0):
                 break
-            elif (i >=9):
+            elif (i >=15):
                 return out,filet 
             try:
                 page = requests.get(url, headers=agent) 
@@ -117,27 +144,27 @@ def scrap_file_links(url,filet):
     for link in link:
         
     #Selected format is searched 0=PDF 1=XBLR 2=BOTH
-        if  'href' in link.attrib and 'Estados financieros (XBRL)' in link.attrib['href']:
+        if  'href' in link.attrib and 'XBRL' in link.attrib['href']:
             out=link.attrib['href']
-            out='http://www.cmfchile.cl/institucional'+ out[2:len(out)] 
+            out='https://www.cmfchile.cl/institucional'+ out[2:len(out)] 
             out=re.sub(' ','%20',out)
             filet=1
-        elif 'href' in link.attrib and 'Estados financieros (PDF)' in link.attrib['href']:
+        elif 'href' in link.attrib and 'PDF' in link.attrib['href']:
             out=link.attrib['href']
-            out='http://www.cmfchile.cl/institucional'+ out[2:len(out)]  
+            out='https://www.cmfchile.cl/institucional'+ out[2:len(out)]  
             out=re.sub(' ','%20',out)
             filet=0
         
       
     return out,filet
 
-#print( scrap_File_Links('http://www.cmfchile.cl/institucional/mercados/entidad.php?auth=&send=&mercado=V&rut=96885880&rut_inc=&grupo=0&tipoentidad=RVEMI&vig=VI&row=AAAwy2ACTAAABzBAAN&mm=03&aa=2019&tipo=C&orig=lista&control=svs&tipo_norma=IFRS&pestania=3',0) )
+#print( scrap_File_Links('https://www.cmfchile.cl/institucional/mercados/entidad.php?auth=&send=&mercado=V&rut=96885880&rut_inc=&grupo=0&tipoentidad=RVEMI&vig=VI&row=AAAwy2ACTAAABzBAAN&mm=03&aa=2019&tipo=C&orig=lista&control=svs&tipo_norma=IFRS&pestania=3',0) )
 #a=scrap_company_Links('96885880','03','2019')
 #print(a)
 #Download list not working/not used yet
 def download_list(month,year):
     # www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs_excel2.php?aa=2019&mm=03
-    template = 'http://www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs_excel2.php?'
+    template = 'https://www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs_excel2.php?'
     year='aa='+year
     month='&mm='+month
     url=template+year+month
@@ -157,8 +184,8 @@ def download_list(month,year):
 def url_generator(site,month,year):
     url='no url found'
     if site=='cmf'or site=='cmf.cl':
-        #http://www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs.php?mm_ifrs=03&aa_ifrs=2019 For first 3 months of 2019
-        template='http://www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs.php?mm_ifrs=' #For 2019
+        #https://www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs.php?mm_ifrs=03&aa_ifrs=2019 For first 3 months of 2019
+        template='https://www.cmfchile.cl/institucional/mercados/novedades_envio_sa_ifrs.php?mm_ifrs=' #For 2019
 
         year=year
         url=template+month+'&aa_ifrs='+year #Create a handle, page, to handle the contents of the website
@@ -174,7 +201,8 @@ def url_generator(site,month,year):
 
 #Create pandas DataFrame from list in an html webpage
 def scrap_lists(url):
-    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+    #agent ={"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+    found = 0
     try:
         page = requests.get(url, headers=agent)
     except:        
@@ -258,15 +286,16 @@ def scrap_lists(url):
 #
 def scrap_fillings(urls,filenames,update=0):
         #Download fillings according to obtained list of URLs
+        session = requests.Session()
         for i in range (0,len(urls)):
             if filenames[i] == '0':
                 continue
             else:
                 url=urls[i]
-                agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+                #agent ={"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
                 found = 0 
                 try: 
-                    myfile = requests.get(url, headers=agent)
+                    myfile = session.get(url, headers=agent)
                 except: 
                     print("Error:"+url+"\n  Trying again")
                     for i in range(1,10):
@@ -275,7 +304,7 @@ def scrap_fillings(urls,filenames,update=0):
                         elif (i >=9):
                             return
                         try:
-                            myfile = requests.get(url, headers=agent)
+                            myfile = session.get(url, headers=agent)
                             found = 1
                         except KeyboardInterrupt:
                             print('Interrupted')
@@ -574,6 +603,7 @@ def bruteforce_bank_scrap(month,year, month2='03', year2='2020',update=0):
     number_of_files=0
     name_month=3
     name_year=2020
+    session = requests.Session()
     while number_of_files<previous_months and i<MAXMONTHS*previous_months:
         url='https://www.sbif.cl/sbifweb3/internet/archivos/Info_Fin_7877_'+str(19022-i)+'.zip'
         i+=1
@@ -585,8 +615,8 @@ def bruteforce_bank_scrap(month,year, month2='03', year2='2020',update=0):
         name_month=int(name_month)
         name_year=int(name_year)
         if update==0 or not os.path.exists(wd+datafold+filename):
-            agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-            myfile = requests.get(url, headers=agent)            
+            #agent ={"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+            myfile = session.get(url, headers=agent)            
             page=lh.fromstring(myfile.content)
             #We obtain every <a and take the URLS to a list
             test = page.xpath('//h1[contains(@class,"titulo")]')
@@ -652,8 +682,8 @@ def bruteforce_bank_scrap(month,year, month2='03', year2='2020',update=0):
         name_month=int(name_month)
         name_year=int(name_year)
         if update==0 or not os.path.exists(wd+datafold+filename+'.zip'):
-            agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-            myfile = requests.get(url, headers=agent)            
+            #agent ={"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+            myfile = session.get(url, headers=agent)            
             page=lh.fromstring(myfile.content)
             #We obtain every <a and take the URLS to a list
             test = page.xpath('//h1[contains(@class,"titulo")]')
