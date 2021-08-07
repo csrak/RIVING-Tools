@@ -146,8 +146,6 @@ def quick_ratio(df,tofile=0,filename='Prices',years=1):
 		prices_f.to_csv(filename+'.csv', index = None, header=True)
 	return prices_f
 
-
-
 def prices_to_file(datafold, series = 'A'): #We select the preferred series of the shares we want to consult, unique series are always included
 	df=rcl.CL.read_data('Database_in_CLP.csv',datafold,1)
 	#we pass present prices to a single file for faster screening, this file should be updated daily

@@ -1,5 +1,6 @@
 import requests
 import random
+import json
 import time
 import lxml.html as lh
 from time import sleep
@@ -100,86 +101,25 @@ def yahoo_quote_CL(ticker,series = ''): #Obtain quote from yahoo finance
         quote=float(summary_table[0].replace(',',''))
     return quote
 
-def barron_quoteA_CL(ticker): #Obtain quote from yahoo finance
-    ticker2=ticker+'.a'
-    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-    url = "https://www.barrons.com/quote/stock/cl/xsgo/"+ticker2
-    response = requests.get(url, headers=agent,verify=False)
-    print ("Parsing %s"%(url))
-    parser = lh.fromstring(response.text)
-    summary_table = parser.xpath('.//td')   
-    multiplier='Not Found'
-    quote=''
-    for i in range(len(summary_table)):
-        if summary_table[i].text== 'Market Value':
-            multiplier=(summary_table[i+1].text)[-1]
-            summary_table=((((summary_table[i+1].text).replace('$','')).replace('B','')).replace('M','')).replace('T','')
-            break    
-    if multiplier=='Not Found':
-        quote=np.nan       
-        market_cap=0
-    else:
-        if multiplier=='T':
-                multiplier=1000000000000
-        elif multiplier=='B':
-            multiplier=1000000000
-        elif multiplier=='M':
-            multiplier=1000000
-        else:
-            multiplier=1
-        market_cap=float(summary_table)*multiplier
-        price = parser.xpath('//span[contains(@class,"market__price bgLast")]//text()')   
-        quote=float(price[0].replace(',',''))
-    return quote,market_cap
-
-def barron_quoteB_CL(ticker): #Obtain quote from yahoo finance
-    ticker2=ticker+'.b'
-    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-    url = "https://www.barrons.com/quote/stock/cl/xsgo/"+ticker2
-    response = requests.get(url, headers=agent,verify=False)
-    print ("Parsing %s"%(url))
-    parser = lh.fromstring(response.text)
-    summary_table = parser.xpath('.//td')   
-    multiplier='Not Found'
-    quote=''
-    for i in range(len(summary_table)):
-        if summary_table[i].text== 'Market Value':
-            multiplier=(summary_table[i+1].text)[-1]
-            summary_table=((((summary_table[i+1].text).replace('$','')).replace('B','')).replace('M','')).replace('T','')
-            break    
-    if multiplier=='Not Found':
-        quote=np.nan       
-        market_cap=0
-    else:
-        if multiplier=='T':
-                multiplier=1000000000000
-        elif multiplier=='B':
-            multiplier=1000000000
-        elif multiplier=='M':
-            multiplier=1000000
-        else:
-            multiplier=1
-        market_cap=float(summary_table)*multiplier
-        price = parser.xpath('//span[contains(@class,"market__price bgLast")]//text()')   
-        quote=float(price[0].replace(',',''))
-    return quote,market_cap
-    
-def barron_quote_CL(ticker): #Obtain quote from yahoo finance
+ 
+def barron_quote_CL(ticker, letter = ""): #Obtain quote from yahoo finance       
     ticker=ticker.replace(' ','')
+    ticker2 = ticker + letter
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-    url = "https://www.barrons.com/quote/stock/cl/xsgo/"+ticker
+    url = "https://www.barrons.com/quote/stock/cl/xsgo/"+ticker2
     response = requests.get(url, headers=agent,verify=False)
     print ("Parsing %s"%(url))
     parser = lh.fromstring(response.text)
+    #print(response.text)
     summary_table = parser.xpath('.//td')  
-    multiplier='Not Found'
+    multiplier='Not Found'    
     for i in range(len(summary_table)):
         if summary_table[i].text== 'Market Value':
             multiplier=(summary_table[i+1].text)[-1]
             summary_table=(((((summary_table[i+1].text).replace('$','')).replace('B','')).replace('M','')).replace('T','')).replace(',','')
             break    
-    if multiplier=='Not Found':
-        quote=np.nan
+    if multiplier=='Not Found' or summary_table== "N/A":
+        quote=np.nan       
         market_cap=0
     else: 
         if multiplier=='T':
@@ -191,35 +131,42 @@ def barron_quote_CL(ticker): #Obtain quote from yahoo finance
         else:
             multiplier=1
         market_cap=float(summary_table)*multiplier
-        price = parser.xpath('//span[contains(@class,"market__price bgLast")]//text()')   
-        quote=float(price[0].replace(',',''))
+        price = parser.xpath('//span[contains(@class,"QuotePrice")]')   
+        price = parser.xpath('//script')  
+        #print(price[1].text)
+        python_dict = json.loads(price[1].text)
+        #print(python_dict)
+        quote=float(python_dict["price"].replace(',',''))
+        #print(quote)
     return quote,market_cap
 
 
 def live_quote_cl(ticker, series = 'u'):
     #We hardcode LTM because of specific change in ticker
+    if ticker == "LTM (ex LAN)":
+        ticker = "LTM"
     if series.lower() == 'a':
         quote,market_cap=barron_quote_CL(ticker)
-        if quote!=quote or market_cap==0:
-            quote,market_cap=barron_quoteA_CL(ticker)
-        if quote!=quote or quote==0:            
-            quote=yahoo_quote_CL(ticker)
-            if quote!=quote or quote==0:
-                quote=yahoo_quote_CL(ticker,'A')
+        if quote!=quote or quote==0:  
+            quote,market_cap=barron_quote_CL(ticker,'a')
+            if quote!=quote or quote==0:            
+                quote=yahoo_quote_CL(ticker)
                 if quote!=quote or quote==0:
-                    quote=mw_quote_CL(ticker)
+                    quote=yahoo_quote_CL(ticker,'A')
+                    if quote!=quote or quote==0:
+                        quote=mw_quote_CL(ticker)
         if market_cap==0:
             market_cap=np.nan
     elif series.lower() == 'b':
         quote,market_cap=barron_quote_CL(ticker)
-        if quote!=quote or market_cap==0:
-            quote,market_cap=barron_quoteB_CL(ticker)
-        if quote!=quote or quote==0:            
-            quote=yahoo_quote_CL(ticker)
-            if quote!=quote or quote==0:
-                quote=yahoo_quote_CL(ticker,'B')
+        if quote!=quote or quote==0:
+            quote,market_cap=barron_quote_CL(ticker,'b')
+            if quote!=quote or quote==0:            
+                quote=yahoo_quote_CL(ticker)
                 if quote!=quote or quote==0:
-                    quote=mw_quote_CL(ticker)
+                    quote=yahoo_quote_CL(ticker,'B')
+                    if quote!=quote or quote==0:
+                        quote=mw_quote_CL(ticker)
         if market_cap==0:
             market_cap=np.nan
     else:

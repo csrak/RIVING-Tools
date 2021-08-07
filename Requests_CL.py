@@ -900,7 +900,18 @@ def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, s
 #print(scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
 
 
-
+def get_all(n, m):
+    full_list = range(n)
+    list_of_Mm1 = [[i] for i in range(m)]
+    final_list = []
+    if m>2:
+        list_of_Mm1 = get_all(n, m-1)
+    for el in list_of_Mm1:
+        next = el[-1]+1
+        while (next < len(full_list)) :
+            final_list.append(list_of_Mm1+[full_list[el[-1]+1]])
+    return final_list
+print(get_all(5,3))
 
 #update_database
 
@@ -940,6 +951,7 @@ def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, s
 #upandgetem('09','2020')
 #upandgetem('12','2020')
 #upandgetem('03','2021')
+#upandgetem('06','2021')
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')
