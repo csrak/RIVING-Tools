@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+
+#database tool folders
+Data/US/4F/*/*
+Data/US/4F_old/*
+Data/US/4F_old/*/*
+
 # C extensions
 *.so
 .xml
