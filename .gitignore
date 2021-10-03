@@ -8,10 +8,11 @@ __pycache__/
 Data/US/4F/*/*
 Data/US/4F_old/*
 Data/US/4F_old/*/*
-
+Prices.csv
 # C extensions
 *.so
 .xml
+.vscode
 
 # Distribution / packaging
 .Python
