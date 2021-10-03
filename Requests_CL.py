@@ -158,15 +158,15 @@ def Format_Data(month, year):
 # Update_Data -> Updates data already scraping from multiple databases (Needs Format_Data to be used)
 ##
 
-def Update_Data(month, year):
+def Update_Data(month, year, online = False):
     
     # First updates ticker list from MW or another selected url
     #CL.scrap_mw() #Online option, not up to dateas of 14/04/2020, so not recommended
-    CL.scrap_offline()
+    CL.scrap_tickers(offline = not online)
     # Then updates list of Registered Businesses with ruts
-    CL.scrap_rutlist(month,year)
+    #CL.scrap_rutlist(month,year)
     #Nothing else for now
-    Format_Data(month, year)
+    #Format_Data(month, year)
     return 0
 
 def get_fillings(month,year,df,datafold,wd): 
@@ -245,13 +245,13 @@ def upandgetem(month1,year1,month2 = 0,year2 = 0,update = 0 ):
                 year=str(int(year1)+i)
                 for month in months:
                     if (year!=year1 or int(month1)>=int(month)) and (year!=year2 or int(month2)<=int(month)):
-                        file_name='registered_stocks_TICKER'+month+'-'+year+'.csv'
+                        file_name='registered_stocks.csv'
                         datafold='/Data/Chile/'
 
                         df=CL.read_data(file_name,datafold)
                         get_fillings(month,year,df,datafold,wd)
         elif month2 ==0 and year2==0 :
-            file_name='Ticker_data/registered_stocks_TICKER'+month1+'-'+year1+'.csv'
+            file_name='registered_stocks.csv'
             datafold='/Data/Chile/'
             df=CL.read_data(file_name,datafold)
             get_fillings(month1,year1,df,datafold,wd)
@@ -845,13 +845,13 @@ def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, s
         month = 3
     else:
         month = trimester*3
-    file_name='registered_stocks_TICKER'+str(month).zfill(2)+'-'+str(year_f-1)+'.csv' #We read a specific list of tickers registered a specific trimester
+    file_name='registered_stocks.csv' #We read a specific list of tickers registered a specific trimester
                                                                                       #We select 1 year before the last one, in case the latest year do not have finished trimesters 
-    df1=CL.read_data(file_name,datafold+"/Ticker_data/",1)
+    df1=CL.read_data(file_name,datafold,1)
     if ticker != '':
         df1=df1.loc[df1['Ticker']==ticker]
     tickers = df1['Ticker'].tolist()
-    ruts = df1['Rut'].tolist()        
+    ruts = df1['RUT'].tolist()        
     final_dataframe = []
     counter = 0
     for rut in ruts:
@@ -893,30 +893,31 @@ def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, s
     return result #Return the dataframe
 
 
-
-
-#wd=os.getcwd()   
-#datafold='/Data/Chile/'
-#print(scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
-
-
-def get_all(n, m):
+'''
+def get_all(n, m, end = []):
     full_list = range(n)
-    list_of_Mm1 = [[i] for i in range(m)]
+    list_of_Mm1 = [[i] for i in range(n)]
     final_list = []
     if m>2:
-        list_of_Mm1 = get_all(n, m-1)
+        list_of_Mm1, end = get_all(n, m-1,end)
+        #print("THis is the list of mm1 for m =", m)
+        #print(list_of_Mm1)
+    else:
+        end.append(list_of_Mm1)
     for el in list_of_Mm1:
+        #print(el)
         next = el[-1]+1
         while (next < len(full_list)) :
-            final_list.append(list_of_Mm1+[full_list[el[-1]+1]])
-    return final_list
-print(get_all(5,3))
-
+            final_list.append(el+[full_list[next]])
+            next = next+1
+    end.append(final_list)
+    return final_list, end
+print(get_all(5,3)[1])
+'''
 #update_database
 
 #all_banks('/Data/Chile/Banks/','11','2012', '03', '2020')
-#Update_Data('03','2013')
+#Update_Data('03','2013',online = True)
 
 #upandgetem('03','2013')
 #upandgetem('06','2013')
@@ -935,7 +936,7 @@ print(get_all(5,3))
 #upandgetem('09','2016')
 #upandgetem('12','2016')
 #upandgetem('03','2017')
-#upandgetem('06','2017')
+##upandgetem('06','2017')
 #upandgetem('09','2017')
 #upandgetem('12','2017')
 #upandgetem('03','2018')
@@ -943,15 +944,16 @@ print(get_all(5,3))
 #upandgetem('09','2018')
 #upandgetem('12','2018')
 #upandgetem('03','2019')
-#upandgetem('06','2019')
+##upandgetem('06','2019')
 #upandgetem('09','2019')
 #upandgetem('12','2019')
 #upandgetem('03','2020')
 #upandgetem('06','2020')
-#upandgetem('09','2020')
+##upandgetem('09','2020')
 #upandgetem('12','2020')
 #upandgetem('03','2021')
 #upandgetem('06','2021')
+#upandgetem('09','2021')
 #wd=os.getcwd()   
 #datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')
@@ -960,5 +962,10 @@ print(get_all(5,3))
 #print(res)
 #print(listafinal)
 ################
+
+wd=os.getcwd()   
+datafold='/Data/Chile/'
+print(scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
+
 
 #read_pdf_fil('SECURITY_12-2019.pdf',wd+datafold+'12-2019NOTYET/')

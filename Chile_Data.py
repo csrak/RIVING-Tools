@@ -7,7 +7,6 @@
 
 import requests
 import sys
-import live_data as ld
 import time
 import glob
 import lxml.html as lh
@@ -92,7 +91,7 @@ def scrap_company_Links(companies_list,month, year):
     #Selected format is searched 0=PDF 1=XBLR 2=BOTH
     for link in link:
         for i in range (0,companies_list.shape[0]):
-            rut=companies_list.loc[i,'Rut']
+            rut=companies_list.loc[i,'RUT']
             if 'href' in link.attrib and rut in link.attrib['href']:
                 out[i]=link.attrib['href']
                 out[i]='https://www.cmfchile.cl/institucional/mercados/'+ out[i]               
@@ -423,10 +422,20 @@ def scrap_mw():
     datafold=wd+'/Data/Chile/'
     df.to_csv(datafold+file_name, index = None, header=True)
 
-def scrap_offline():
+
+def scrap_tickers( offline = False ):
+
     wd=os.getcwd()
     datafold='/Data/Chile/'
     file_name='list_of_tickers.pdf'
+    if offline == False:
+        url = 'http://cibe.bolsadesantiago.com/EmisoresyValores/Nminas'+'%20'+'Emisores/1.%20N%C3%B3mina'+'%20'+'Emisores'+'%20'+'de'+'%20'+'Acciones.pdf'
+        print(url)
+        response = requests.get(url)
+        with open(wd+datafold+file_name, 'wb') as f:
+            print("Please wait until new list of public companies is downloaded")
+            f.write(response.content)
+            time.sleep(10)
     filepdf = open(wd+datafold+file_name, 'rb')
     # pdf reader object
     filling = PyPDF2.PdfFileReader(filepdf)
@@ -443,16 +452,28 @@ def scrap_offline():
     #print(table)
     filepdf.close()
     tickers=['Ticker']
+    rut=['RUT']
     razon=['Name']
     count=0
+    
     for pages in table:
+        pages = [value for value in pages if value !='']
         #print(pages)
-        start=pages.index(str(1+count))
-        for j in range((len(pages)-start)//3):
-            tickers.append(pages[start+1+3*j])
-            razon.append(pages[start+2+3*j])
-            count=int(pages[start+3*j])
-    final_list=[tickers,razon]
+        while(True):
+            try:
+                start=pages.index(str(1+count)) #Check where current number is in list
+            except ValueError: 
+                break
+            try:
+                end=pages.index(str(2+count)) #Check where it ends
+            except ValueError:
+                end=len(pages)
+            for j in range((end-start-2)//2):
+                tickers.append(pages[start+1+j])
+                rut.append(pages[end-1].replace('.',''))
+                razon.append(pages[end-2])
+            count=count+1
+    final_list=[tickers,rut,razon]
     temp_final_list=[]
     for j in range(0,len(tickers)):
         dim=[]
@@ -485,7 +506,7 @@ def get_ruts(df):
     #We take out the verifier code of each rut since it is not used
     if not isinstance(df, int):
         for i in range (0,df.shape[0]):
-            df.loc[i, 'Rut']=(df.loc[i, 'Rut'])[:-2]
+            df.loc[i, 'RUT']=(df.loc[i, 'RUT'])[:-2]
     else:
         raise SystemExit('\nPlease Update not setting "Scrap" argument in "upandgetem" function ')    
     return df

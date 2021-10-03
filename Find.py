@@ -146,7 +146,7 @@ def quick_ratio(df,tofile=0,filename='Prices',years=1):
 		prices_f.to_csv(filename+'.csv', index = None, header=True)
 	return prices_f
 
-def prices_to_file(datafold, series = 'A'): #We select the preferred series of the shares we want to consult, unique series are always included
+def prices_to_file(datafold): #We select the preferred series of the shares we want to consult, unique series are always included
 	df=rcl.CL.read_data('Database_in_CLP.csv',datafold,1)
 	#we pass present prices to a single file for faster screening, this file should be updated daily
 	tickers=rcl.CL.read_data('registered_stocks.csv',datafold,1)
@@ -154,9 +154,10 @@ def prices_to_file(datafold, series = 'A'): #We select the preferred series of t
 	prices=[]
 	shares=[]
 	for Ticker in tickers:
-		quote,m=ld.live_quote_cl(Ticker,series)
+		quote,m=ld.live_quote_cl(Ticker)
 		prices.append(quote)
 		shares.append(SC.get_shares(df,Ticker,quote,m))
+		#print(pricess)
 	df=pd.DataFrame()
 	df['ticker']=tickers
 	df['price']=prices
@@ -217,7 +218,7 @@ def dividend_yields(dfile = '', datafolder = '', dataf = []):
 wd=os.getcwd()
 datafold='/Data/Chile/'
 
-prices_to_file(wd+datafold,series = 'A')
+prices_to_file(wd+datafold)
 file_name='Database_in_CLP.csv'
 #Ticker='ZOFRI'
 #df=rcl.CL.read_data(file_name,wd+datafold,1)

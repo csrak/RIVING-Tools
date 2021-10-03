@@ -380,7 +380,7 @@ def CCO(df): #W.I.P
 datafold='/Data/Chile/'
 file_name='Database_Chile_Since_03-2013.csv'
 
-df=rcl.CL.read_data(file_name,datafold)#print(df.loc[:, ['revenue','Date','TICKER']])
+df=rcl.CL.read_data(file_name,datafold)
 start=time.time()
 df = all_CLP(df)
 print(time.time()-start)

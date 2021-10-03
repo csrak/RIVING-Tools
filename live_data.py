@@ -71,13 +71,55 @@ def mw_quote_CL(ticker): #Obtain quote from marketwatch finance
     response = requests.get(url, headers=agent,verify=False)
     print ("Parsing %s"%(url))
     parser = lh.fromstring(response.text)
-    summary_table = parser.xpath('//bg-quote[contains(@class,"value")]//text()')
+    summary_table = parser.xpath('//h2[contains(@class,"intraday__price")]//span[@class = "value"]//text()')
     if not summary_table:
         quote=np.nan
     else:
         quote=(summary_table[0].replace(',',''))     
-        quote=float(summary_table[0].replace('$','')) 
-    return quote
+        quote=float(quote.replace('$','')) 
+    shares = parser.xpath('//li[@class="kv__item"]//small[text()="Shares Outstanding"]/following-sibling::span//text()') 
+    if not shares:
+        shares=np.nan
+    elif 'N/A' in str(shares[0]):
+        shares=np.nan
+    else:
+        shares=str(shares[0]) 
+        multiplier=(shares)[-1]
+        shares=(((((shares).replace('$','')).replace('B','')).replace('M','')).replace('T','')).replace(',','')
+        shares = shares.replace('K','')
+        if multiplier=='T':
+            multiplier=1000000000000
+        elif multiplier=='B':
+            multiplier=1000000000
+        elif multiplier=='M':
+            multiplier=1000000
+        elif multiplier=='K':
+            multiplier=1000
+        else:
+            multiplier=1
+        shares=float(shares)*multiplier
+    market_cap = parser.xpath('//li[@class="kv__item"]//small[text()="Market Cap"]/following-sibling::span//text()') 
+    if not market_cap:
+        market_cap=np.nan
+    elif 'N/A' in str(market_cap[0]):
+        market_cap=np.nan
+    else: 
+        market_cap = str(market_cap[0])
+        multiplier=(market_cap)[-1]
+        market_cap=(((((market_cap).replace('$','')).replace('B','')).replace('M','')).replace('T','')).replace(',','')
+        market_cap = market_cap.replace('K','')
+        if multiplier=='T':
+            multiplier=1000000000000
+        elif multiplier=='B':
+            multiplier=1000000000
+        elif multiplier=='M':
+            multiplier=1000000
+        elif multiplier=='K':
+            multiplier=1000
+        else:
+            multiplier=1
+        market_cap=float(market_cap)*multiplier
+    return quote, market_cap, shares
 
 def yahoo_quote_CL(ticker,series = ''): #Obtain quote from yahoo finance
     if series == '':
@@ -114,7 +156,7 @@ def barron_quote_CL(ticker, letter = ""): #Obtain quote from yahoo finance
     summary_table = parser.xpath('.//td')  
     multiplier='Not Found'    
     for i in range(len(summary_table)):
-        if summary_table[i].text== 'Market Value':
+        if summary_table[i].text== 'Shares Outstanding':
             multiplier=(summary_table[i+1].text)[-1]
             summary_table=(((((summary_table[i+1].text).replace('$','')).replace('B','')).replace('M','')).replace('T','')).replace(',','')
             break    
@@ -122,65 +164,63 @@ def barron_quote_CL(ticker, letter = ""): #Obtain quote from yahoo finance
         quote=np.nan       
         market_cap=0
     else: 
+        summary_table = summary_table.replace('K','')
         if multiplier=='T':
             multiplier=1000000000000
         elif multiplier=='B':
             multiplier=1000000000
         elif multiplier=='M':
             multiplier=1000000
-        else:
-            multiplier=1
+        elif multiplier=='K':
+            multiplier=1000
         market_cap=float(summary_table)*multiplier
         price = parser.xpath('//span[contains(@class,"QuotePrice")]')   
         price = parser.xpath('//script')  
         #print(price[1].text)
-        python_dict = json.loads(price[1].text)
-        #print(python_dict)
-        quote=float(python_dict["price"].replace(',',''))
-        #print(quote)
+        try:
+            python_dict = json.loads(price[1].text)
+            #print(python_dict)
+            quote=float(python_dict["price"].replace(',',''))
+            #print(quote)
+        except TypeError:
+            #print(response.text)
+            quote=np.nan        
     return quote,market_cap
 
 
-def live_quote_cl(ticker, series = 'u'):
+def live_quote_cl(ticker):
     #We hardcode LTM because of specific change in ticker
+    market_cap=np.nan
+    shares=np.nan
+    quote=np.nan
     if ticker == "LTM (ex LAN)":
         ticker = "LTM"
-    if series.lower() == 'a':
+    ticker = ticker.replace("-",".")
+    quote,market_cap,shares=mw_quote_CL(ticker)
+    print(quote, "= ")
+    if quote!=quote or quote==0 and ((market_cap==0 or market_cap==np.nan) or (shares == 0 or shares == np.nan)): 
         quote,market_cap=barron_quote_CL(ticker)
+    elif quote!=quote or quote==0:
+        quote,market_cap0=barron_quote_CL(ticker)
+    elif ((market_cap==0 or market_cap==np.nan) or (shares == 0 or shares == np.nan)): 
+        quote0,market_cap=barron_quote_CL(ticker)
+        print("Quote = ", quote)
+        print("market_cap = ", market_cap)
         if quote!=quote or quote==0:  
-            quote,market_cap=barron_quote_CL(ticker,'a')
+            quote,market_cap=barron_quote_CL(ticker)
+            print("Quote = ", quote)
+            print("market_cap = ", market_cap)
             if quote!=quote or quote==0:            
                 quote=yahoo_quote_CL(ticker)
-                if quote!=quote or quote==0:
-                    quote=yahoo_quote_CL(ticker,'A')
-                    if quote!=quote or quote==0:
-                        quote=mw_quote_CL(ticker)
-        if market_cap==0:
-            market_cap=np.nan
-    elif series.lower() == 'b':
-        quote,market_cap=barron_quote_CL(ticker)
-        if quote!=quote or quote==0:
-            quote,market_cap=barron_quote_CL(ticker,'b')
-            if quote!=quote or quote==0:            
-                quote=yahoo_quote_CL(ticker)
-                if quote!=quote or quote==0:
-                    quote=yahoo_quote_CL(ticker,'B')
-                    if quote!=quote or quote==0:
-                        quote=mw_quote_CL(ticker)
-        if market_cap==0:
-            market_cap=np.nan
-    else:
-        quote,market_cap=barron_quote_CL(ticker)
-        if quote!=quote or quote==0:            
-            quote=yahoo_quote_CL(ticker)
-            if quote!=quote or quote==0:
-                quote=mw_quote_CL(ticker)
-        if market_cap==0:
-            market_cap=np.nan
-        print('Warning: No Series selected for live price determination')
-        print('Only shares with "U" type series were retrieved')
+                print("Quote = ", quote)
+                print("market_cap = ", market_cap)                
+    if market_cap==0 and shares != 0 and shares != np.nan:            
+        market_cap=quote*shares
+    if market_cap==0:
+        market_cap=np.nan
+    print(quote)
     return float(quote),float(market_cap)
 
         #return quote
-#print(mw_quote_CL('SMU'))    
+#print(mw_quote_CL('ANDINA.a'))    
 #print(bloomberg_quote_CL('ANDACOR'))
