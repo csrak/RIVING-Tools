@@ -60,7 +60,7 @@ def quarters_to_years(data,dates):
 		
 	return 0
 
-def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, per_share = False,check_year = True, debug = False, forward = False):	
+def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, per_share = False,check_year = True, debug = False, forward = False, last = False):	
 	if check_year == True:
 		curr_date = datetime.datetime.now()
 	#corr min substracts earningsaccording to % ownership in minority stakes of the company, activated by default
@@ -100,6 +100,8 @@ def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, pe
 					if datas[-2]==datas[-2] and datas[-3]==datas[-3] and datas[-4]==datas[-4] and ((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)!=0:
 						if (forward ==True):
 							parameter.append(datas[-1]*4*corr)
+						elif (last == True):
+							parameter.append(datas[-1]*corr)
 						else:
 							parameter.append((datas[-1]+datas[-2]+datas[-3]+datas[-4])*corr)
 					else:
@@ -234,7 +236,7 @@ price_to_parameter(df,'net profit',tofile=1, corr_min = 1,debug = False)
 price_to_parameter(df,'net profit',tofile=1, corr_min = 1,debug = False, forward = True)
 price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = False)
 price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = False,forward = True)
-price_to_parameter(df,'dividends paid',tofile=1,debug = False) #Not enough data well reported by companies, use dividend_yields instead
+price_to_parameter(df,'Equity',tofile=1,debug = False ,last = True) #Not enough data well reported by companies, use dividend_yields instead
 quick_ratio(df,tofile=1)
 dividend_yields(dfile = 'Dividends__2018_2021.csv', datafolder = wd+datafold, dataf = [])
 

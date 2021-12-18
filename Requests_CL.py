@@ -24,7 +24,7 @@ import time
 
 
 #We define hardcoded sets and lists that we will need to find the right values when parsing the fillings
-
+#class request_cl:
 months=['03','06','09','12'] #Possible months
 years=range(2000,2100) # years are hardcoded for no good reason, just because
 years=[str(i) for i in years]
@@ -864,7 +864,7 @@ def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, s
         print('Ticker: '+ tickers[counter])
         page = requests.get(url, headers=agent)  
         try:
-            df = pd.read_excel(page.content,header = 6, engine = "openpyxl")    #It is a xlsx file first 7 rows are junk data    
+            df = pd.read_excel(page.content,header = 6, engine = "openpyxl")    #It is an xlsx file first 7 rows are junk data    
         except BadZipFile:
             counter = counter + 1
             continue
@@ -952,20 +952,22 @@ print(get_all(5,3)[1])
 ##upandgetem('09','2020')
 #upandgetem('12','2020')
 #upandgetem('03','2021')
-#upandgetem('06','2021')
-#upandgetem('09','2021')
-#wd=os.getcwd()   
-#datafold='/Data/Chile/'
+'''
+upandgetem('06','2021')
+upandgetem('09','2021')
+wd=os.getcwd()   
+datafold='/Data/Chile/'
 #all_companies(lista,wd+datafold,'03','2013')
-#all_companies(lista,wd+datafold,'12','2020',update=1,updatemonth='03',updateyear='2013')
+all_companies(lista,wd+datafold,'09','2021',update=1,updatemonth='03',updateyear='2013')
+'''
 #read_xblr(wd+datafold+'03-2019/AESGENER_03-2019/',lista,'03','2019')
 #print(res)
 #print(listafinal)
 ################
 
-wd=os.getcwd()   
-datafold='/Data/Chile/'
-print(scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
+#wd=os.getcwd()   
+#datafold='/Data/Chile/'
+#print(scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
 
 
 #read_pdf_fil('SECURITY_12-2019.pdf',wd+datafold+'12-2019NOTYET/')

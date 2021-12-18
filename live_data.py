@@ -18,7 +18,82 @@ from zipfile import ZipFile
 import urllib3
 import urllib.request as newreq
 import numpy as np
+from zipfile import BadZipFile
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import io
+
+#First define classes and functions related to handling of different API's, for now since only alphavalue is supported no check is done, the key has to exist
+
+
+class api_keys:#This collects all api_keys to be used
+    def get_alphavalue_apikey(self):
+        #Reads api key for alphavalue, from a file without extensions where only text containin key should be
+        with open('API_KEY') as f:
+            key = f.readline()
+        return key
+
+    def __init__(self):
+        self.alphavalue = self.get_alphavalue_apikey()
+
+class api_handler: #This contains all the functions needed for getting data from apis, this is the only class actually used for apis, other classes are initialized automatically insdie this one
+
+    
+    def __init__(self):
+        self.api_key_collection=api_keys()
+        self.alphavalue = self.alphavalue_class(self)
+    def init_get_alphavalue(self):
+        return self.alphavalue_class(self)
+    #Class of alphavalue functions, only API in api handler for now
+    class alphavalue_class:
+        def __init__(self, parent):
+            self.api_key=parent.api_key_collection.alphavalue
+
+        query_options = {1:'TIME_SERIES_INTRADAY_EXTENDED', 2:'TIME_SERIES_WEEKLY_ADJUSTED', 3:'TIME_SERIES_MONTHLY_ADJUSTED'}
+        interval_options = {1:'1min', 2:'5min', 3:'15min', 4 :'30min', 5: '60min'} #Time interval between two consecutive data points in the time series.
+        url = 'https://www.alphavantage.co/query?function='
+
+        def get_quotes(self, ticker, query = 'TIME_SERIES_INTRADAY_EXTENDED', interval = '', slice = '', adjusted = '', data_type = 'csv'):
+            apikey = self.api_key
+            if slice !='':
+                slice = '&slice='+slice
+            if interval !='':
+                interval = '&interval='+interval
+            ticker = '&symbol='+ticker
+            if adjusted != '':
+                adjusted = '&adjusted='+adjusted
+            data_type = '&datatype='+data_type
+            url = self.url+query+ticker+interval+slice+adjusted+'&apikey='+apikey+data_type
+            agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+            print("Parsing url: " + url)
+            print('Ticker: '+ ticker)
+            page = requests.get(url, headers=agent)          
+            try:
+                df = pd.read_csv(io.StringIO(page.content.decode('utf-8')))    #It is an xlsx file first 7 rows are junk data    
+                print(df)
+                return df
+            except BadZipFile:
+                print('Problem reading file')
+
+        def get_all_tickers(self):
+            apikey = self.api_key
+            url = self.url+'LISTING_STATUS&apikey='+apikey
+            agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+            print("Parsing url: " + url)
+            page = requests.get(url, headers=agent)          
+            try:
+                df = pd.read_csv(io.StringIO(page.content.decode('utf-8')))    #It is an xlsx file first 7 rows are junk data    
+                print(df)
+                return df
+            except BadZipFile:
+                print('Problem reading file')
+
+            
+'''
+ah = api_handler()
+print(ah.alphavalue.query_options)
+#ah.get_alphavalue_quotes(query = ah.alphavalue_query_options[2], ticker = 'IBM')
+ah.alphavalue.get_all_tickers()
+'''
 
 def get_url_bychunks(url):
     n = 5

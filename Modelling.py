@@ -10,6 +10,22 @@ import Search_chile as scl
 #############
 rate=10 #in % risk free rate
 
+#Below some functions for formatting data from the API to be used for different modelling
+
+class alphavalue_formatted_data:
+	def __init__(self):
+		data_frames = []
+		api = ld.api_handler()
+		self.api = api.alphavalue
+	def get_weekly_quote(self, ticker):		
+		df = self.api.get_quotes(ticker, query = 'TIME_SERIES_WEEKLY_ADJUSTED')
+		df["timestamp"] = pd.to_datetime(df["timestamp"])
+		df.index = df.timestamp
+		df = df[["adjusted close"]]
+		print(df)
+data = alphavalue_formatted_data()
+data.get_weekly_quote('IBM')
+
 
 def basic_dcf(ticker,df):
 	ticker = ticker.upper()
@@ -58,6 +74,8 @@ def model_all_0(df):
 		
 
 
+
+'''
 test = 1
 file_name='Database_in_CLP.csv'
 datafold='/Data/Chile/'
@@ -117,4 +135,4 @@ else:
 	datas,datelist=scl.list_by_date(ticker, data,df)
 	datas2,datelist=scl.list_by_date(ticker, data2,df)
 	scl.plot_data_time(datelist,datas,datas2)
-
+'''
