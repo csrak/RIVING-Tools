@@ -58,10 +58,12 @@ def plot_4f_volume(filename,datafold, netbuy = 'n',  buyorsell = "D",  datesampl
     #print(datas)
     #print(datas)
 
-def plot_list_4f_volume(filenames,datafold, netbuy = 'n',  buyorsell = "D",  datesample = 'W-Mon', normalize = "yes"):
+def list_4f_volume(filenames,datafold, netbuy = 'n',  buyorsell = "D",  datesample = 'W-Mon', normalize = "yes", plot = False):
     #Filenames should be a list of tickers
     #dtype = {"date": }|
+    f_data = pd.DataFrame()
     with pd.option_context('mode.chained_assignment', None): #TO avoid ugly warnings related to loc, and views, doesn't matter
+        datas = pd.DataFrame()
         for name in filenames:
             fold = datafold+name+"/"
             filename = "4f_"+name+".csv"
@@ -80,7 +82,7 @@ def plot_list_4f_volume(filenames,datafold, netbuy = 'n',  buyorsell = "D",  dat
                 database.index = pd.to_datetime(database.index, infer_datetime_format=True)
             except pd._libs.tslibs.np_datetime.OutOfBoundsDatetime:
                 continue
-            datas = pd.DataFrame()
+            
             if netbuy == 'y':
                 database1 = database[database["acquiredordisposed"]=="D"]
                 database2 = database[database["acquiredordisposed"]=="A"]
@@ -113,7 +115,7 @@ def plot_list_4f_volume(filenames,datafold, netbuy = 'n',  buyorsell = "D",  dat
                 #total_hold = sum(list_holds)
                 #totalhold = holders['staticholdings'].sum()
                 print(list_holds)
-                print('----------------------------------------------')
+                #print('----------------------------------------------')
                 datas1=database1.groupby('issuertradingsymbol').resample(datesample)["shares"].sum()
                 datas2=database2.groupby('issuertradingsymbol').resample(datesample)["shares"].sum()
                 
@@ -133,10 +135,18 @@ def plot_list_4f_volume(filenames,datafold, netbuy = 'n',  buyorsell = "D",  dat
             #datas = datas.reindex(datelist, fill_value=0)
             datelist = matplotlib.dates.date2num(datas.index.tolist())
             if normalize == "yes":
-                datas=datas/datas.abs().sum()
-            matplotlib.pyplot.plot_date(datelist, [float('nan') if x==0 else x for x in datas.tolist()], label=name)
-            matplotlib.pyplot.legend()
-        matplotlib.pyplot.show()
+                datas=datas/datas.abs().sum()   
+            if plot:         
+                matplotlib.pyplot.plot_date(datelist, [float('nan') if x==0 else x for x in datas.tolist()], label=name)
+                matplotlib.pyplot.legend()
+            temp_data = pd.DataFrame({(name+'_'+buyorsell):[float('nan') if x==0 else x for x in datas.tolist()]}, datas.index )  
+            if not f_data.empty:
+                f_data = pd.merge(f_data,temp_data, how = 'outer',left_index=True, right_index=True)
+            else:
+                f_data = temp_data
+        if plot: 
+            matplotlib.pyplot.show()
+        return f_data
     #print(datas)
 
 
@@ -149,5 +159,8 @@ wd=os.getcwd()
 ticker_list=US.nasdaq_list(wd)
 filenames = ['nflx','tsla']
 #filenames = sample(ticker_list,600)
-plot_list_4f_volume(filenames, datafold,buyorsell="D", netbuy='y',datesample= 'M')
-
+'''
+df = list_4f_volume(filenames, datafold,buyorsell="D", netbuy='y',datesample= 'W')
+df.head()
+print(df)
+'''

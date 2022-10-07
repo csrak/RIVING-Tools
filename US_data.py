@@ -459,12 +459,16 @@ def run():
     folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/"
     #ticker_list = ['KO',234]
     ticker_list=nasdaq_list(wd)
-    #a = ticker_list.index("mdgs")
-    get_4f(wd, ticker_list, dfrom = '2014-01-01' ,duntil = '2017-01-01')
+    a = ticker_list.index("jd")
+    ticker_list=ticker_list[a:]
+    #get_4f(wd, ticker_list, dfrom = '2014-01-01' ,duntil = '2017-01-01')
+    get_4f(wd, ticker_list, dfrom = '2017-01-01')
     #get_4f(wd, 'tsla', number = 800)
     #read_4f(folder, basic_param,def_basic_param,company = "AMZN",to_file = True)
     make_all_4f(folder)
-#run()
-#folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/"
-#make_all_4f(folder)
+'''    
+run()
+folder = "C:/Users/csrak/Desktop/python/RIVING-Tools/Data/US/4F/"
+make_all_4f(folder)
+'''
 #get_yearly_data(ticker_list=['tsla'])

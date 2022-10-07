@@ -7,6 +7,8 @@ import Requests_CL as rcl
 from matplotlib import pyplot as plt
 import time
 import Search_chile as scl
+import tensorflow as tf
+from US_data_vis import list_4f_volume as l4v
 #############
 rate=10 #in % risk free rate
 
@@ -18,13 +20,78 @@ class alphavalue_formatted_data:
 		api = ld.api_handler()
 		self.api = api.alphavalue
 	def get_weekly_quote(self, ticker):		
+		ticker = ticker.lower()
 		df = self.api.get_quotes(ticker, query = 'TIME_SERIES_WEEKLY_ADJUSTED')
 		df["timestamp"] = pd.to_datetime(df["timestamp"])
 		df.index = df.timestamp
 		df = df[["adjusted close"]]
-		print(df)
+		df.rename(columns={'adjusted close':ticker}, inplace=True)
+		#print(df)
+		return df 
 data = alphavalue_formatted_data()
-data.get_weekly_quote('IBM')
+df = data.get_weekly_quote('TSLA')
+df2 = data.get_weekly_quote('IBM')
+df = pd.merge(df,df2, how = 'outer',left_index=True, right_index=True)
+print(df)
+#plt.plot(df.index, df['quote'])
+#plt.show()
+quotes = df
+#ticker_list=US.nasdaq_list(wd)
+filenames = ['nflx','tsla','ibm']
+#filenames = sample(ticker_list,600)
+datafold = "/Data/US/4F/"
+df = l4v(filenames, datafold,buyorsell="D", netbuy='y',datesample= 'W')
+df = pd.merge(df,quotes, how = 'outer',left_index=True, right_index=True)
+print("FInal Data Frame")
+print(df)
+#Get datetime in seconds
+timestamp_s = df.index.map(pd.Timestamp.timestamp)
+#Get fast fourier transform to see useful frequencies
+fft = tf.signal.rfft(df['ibm'])
+f_per_dataset = np.arange(0, len(fft))
+
+n_samples_h = len(df['tsla'])
+hours_per_year = 24*365.2524
+years_per_dataset = n_samples_h/(hours_per_year)
+
+f_per_year = f_per_dataset/years_per_dataset
+plt.step(f_per_year, np.abs(fft))
+plt.xscale('log')
+plt.ylim(0, max(plt.ylim()))
+plt.xlim([0.1, max(plt.xlim())])
+plt.xticks([1, 365.2524], labels=['1/Year', '1/day'])
+_ = plt.xlabel('Frequency (log scale)')
+plt.show()
+
+
+#Below printing some stock values vs net sales
+'''
+df.head()
+
+fig,axis = plt.subplots()
+# make a plot
+axis.plot(df.index, df[filenames[0]], color="red", marker="o")
+# set x-axis label
+axis.set_xlabel("Date",fontsize=14)
+# set y-axis label
+axis.set_ylabel("Netflix",color="red",fontsize=14)
+axis.set_ylim([0, 1])
+axis2=axis.twinx()
+# make a plot with different y-axis using second axis object
+axis2.plot(df.index, df[filenames[1]],color="blue",marker="o")
+axis2.set_ylabel("Tesla",color="blue",fontsize=14)
+axis2.set_ylim([0, df[filenames[1]].max()*1.1])
+
+axis3=axis.twinx()
+# make a plot with different y-axis using second axis object
+axis3.plot(df.index, df.quote,color="black",marker="o")
+axis3.set_ylabel("Tesla stock",color="black",fontsize=14)
+#axis3.set_ylim([0, 1])
+
+plt.show()
+
+print(df)
+'''
 
 
 def basic_dcf(ticker,df):

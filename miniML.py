@@ -3,6 +3,32 @@ import live_data as ld
 import Requests_CL as rcl
 import os
 import pandas as pd
+
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 '''
 #This function creates a DataFrame, sorted by time, that includes the selected quantities of the selected enterprises and save it a given directory
 #tickers = LIST of business tickers    #columns = LIST of quantities wanted (See the columns already in the Database)

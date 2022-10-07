@@ -20,11 +20,19 @@ import urllib.request as newreq
 import numpy as np
 from zipfile import BadZipFile
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from selenium.webdriver.chrome.service import Service
 import io
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
 
+chrome_options = Options()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--log-level=3')
 #First define classes and functions related to handling of different API's, for now since only alphavalue is supported no check is done, the key has to exist
 
-
+#driver = webdriver.Chrome()
+#print("Current driver", webdriver.Chrome().capabilities['browserVersion'])
 class api_keys:#This collects all api_keys to be used
     def get_alphavalue_apikey(self):
         #Reads api key for alphavalue, from a file without extensions where only text containin key should be
@@ -127,26 +135,36 @@ def get_url_bychunks(url):
 
 def USDtoCLPfunc(month,year,day = '01'):
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
-    url = 'https://www.exchangerates.org.uk/USD-CLP-'+day+'_'+month+'_'+year+'-exchange-rate-history.html'
+    #url = 'https://www.exchangerates.org.uk/USD-CLP-'+day+'_'+month+'_'+year+'-exchange-rate-history.html'
+    url = 'https://www.exchangerates.org.uk/Dollars-to-Chilean-Pesos-currency-conversion-page.html'
     response = requests.get(url, headers=agent,verify=False)
     print ("Parsing %s"%(url))
     parser = lh.fromstring(response.text)
-    values = parser.xpath('//div[contains(@class,"large-12 medium-12 small-12 columns nolpad")]//text()')
+    values = parser.xpath('//span[contains(@id,"shd2b")]//text()')
     if not values:
         return np.nan
-    usdtoclp = str(values[3]).replace("Close: 1 USD = ","")
-    usdtoclp = usdtoclp.replace(" CLP","")
-    usdtoclp=float(usdtoclp)
+    #usdtoclp = str(values[3]).replace("Close: 1 USD = ","")
+    #usdtoclp = usdtoclp.replace(" CLP","")
+    usdtoclp=float(values[0])
+    print("Got price usdtoclp", usdtoclp)
+    if not usdtoclp > 0 :
+        raise ValueError("USD to CLP scraping probably failed")
     return usdtoclp
 
-def mw_quote_CL(ticker): #Obtain quote from marketwatch finance
+def mw_quote_CL(ticker, driver = ''): #Obtain quote from marketwatch finance
+    if driver == '':
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install())) 
     ticker=ticker
-    agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+    #agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = 'https://www.marketwatch.com/investing/stock/' + ticker+'?countrycode=cl'
-    response = requests.get(url, headers=agent,verify=False)
-    print ("Parsing %s"%(url))
-    parser = lh.fromstring(response.text)
-    summary_table = parser.xpath('//h2[contains(@class,"intraday__price")]//span[@class = "value"]//text()')
+    #response = requests.get(url, headers=agent,verify=False)
+    print ("Parsing %s"%(url))    
+    driver.get(url)
+    response = driver.page_source
+    parser = lh.fromstring(response)
+    #print(response)
+    #summary_table = parser.xpath('//h2[contains(@class,"intraday__price")]//span[@class = "value"]//text()')
+    summary_table = parser.xpath('//meta[@name = "price"]//@content')
     if not summary_table:
         quote=np.nan
     else:
@@ -196,7 +214,9 @@ def mw_quote_CL(ticker): #Obtain quote from marketwatch finance
         market_cap=float(market_cap)*multiplier
     return quote, market_cap, shares
 
-def yahoo_quote_CL(ticker,series = ''): #Obtain quote from yahoo finance
+def yahoo_quote_CL(ticker, driver = '', series = ''): #Obtain quote from yahoo finance
+    if driver == '':
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install())) 
     if series == '':
         ticker2=ticker.replace(' ','')+'.SN'
     elif series.lower() == 'a':        
@@ -208,9 +228,9 @@ def yahoo_quote_CL(ticker,series = ''): #Obtain quote from yahoo finance
         return np.nan,
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = "http://finance.yahoo.com/quote/%s?p=%s"%(ticker2,ticker2)
-    response = requests.get(url, headers=agent,verify=False)
-    print ("Parsing %s"%(url))
-    parser = lh.fromstring(response.text)
+    driver.get(url)
+    response = driver.page_source
+    parser = lh.fromstring(response)
     summary_table = parser.xpath('//span[contains(@class,"Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)")]//text()')
     if not summary_table:
        quote=np.nan
@@ -219,14 +239,16 @@ def yahoo_quote_CL(ticker,series = ''): #Obtain quote from yahoo finance
     return quote
 
  
-def barron_quote_CL(ticker, letter = ""): #Obtain quote from yahoo finance       
+def barron_quote_CL(ticker, driver = '', letter = ""): #Obtain quote from yahoo finance      
+    if driver == '':
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install())) 
     ticker=ticker.replace(' ','')
     ticker2 = ticker + letter
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = "https://www.barrons.com/quote/stock/cl/xsgo/"+ticker2
-    response = requests.get(url, headers=agent,verify=False)
-    print ("Parsing %s"%(url))
-    parser = lh.fromstring(response.text)
+    driver.get(url)
+    response = driver.page_source
+    parser = lh.fromstring(response)
     #print(response.text)
     summary_table = parser.xpath('.//td')  
     multiplier='Not Found'    
@@ -263,30 +285,32 @@ def barron_quote_CL(ticker, letter = ""): #Obtain quote from yahoo finance
     return quote,market_cap
 
 
-def live_quote_cl(ticker):
+def live_quote_cl(ticker, driver =[]):    
     #We hardcode LTM because of specific change in ticker
+    if driver == []:
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
     market_cap=np.nan
     shares=np.nan
     quote=np.nan
     if ticker == "LTM (ex LAN)":
         ticker = "LTM"
     ticker = ticker.replace("-",".")
-    quote,market_cap,shares=mw_quote_CL(ticker)
+    quote,market_cap,shares=mw_quote_CL(ticker,driver = driver)
     print(quote, "= ")
     if quote!=quote or quote==0 and ((market_cap==0 or market_cap==np.nan) or (shares == 0 or shares == np.nan)): 
-        quote,market_cap=barron_quote_CL(ticker)
+        quote,market_cap=barron_quote_CL(ticker,driver = driver)
     elif quote!=quote or quote==0:
-        quote,market_cap0=barron_quote_CL(ticker)
+        quote,market_cap0=barron_quote_CL(ticker,driver = driver)
     elif ((market_cap==0 or market_cap==np.nan) or (shares == 0 or shares == np.nan)): 
-        quote0,market_cap=barron_quote_CL(ticker)
+        quote0,market_cap=barron_quote_CL(ticker,driver = driver)
         print("Quote = ", quote)
         print("market_cap = ", market_cap)
         if quote!=quote or quote==0:  
-            quote,market_cap=barron_quote_CL(ticker)
+            quote,market_cap=barron_quote_CL(ticker,driver = driver)
             print("Quote = ", quote)
-            print("market_cap = ", market_cap)
+            print("market_cap = ", driver = driver)
             if quote!=quote or quote==0:            
-                quote=yahoo_quote_CL(ticker)
+                quote=yahoo_quote_CL(ticker,driver = driver)
                 print("Quote = ", quote)
                 print("market_cap = ", market_cap)                
     if market_cap==0 and shares != 0 and shares != np.nan:            
@@ -297,5 +321,66 @@ def live_quote_cl(ticker):
     return float(quote),float(market_cap)
 
         #return quote
-#print(mw_quote_CL('ANDINA.a'))    
-#print(bloomberg_quote_CL('ANDACOR'))
+#print(live_quote_cl('ANDINA.b'))
+def share_count_bs(ticker, driver = ''): #Obtain quote from marketwatch finance
+    if driver == '':
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install())) 
+    ticker=ticker
+    #agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
+    url = 'https://www.marketwatch.com/investing/stock/' + ticker+'?countrycode=cl'
+    #response = requests.get(url, headers=agent,verify=False)
+    print ("Parsing %s"%(url))    
+    driver.get(url)
+    response = driver.page_source
+    parser = lh.fromstring(response)
+    #print(response)
+    #summary_table = parser.xpath('//h2[contains(@class,"intraday__price")]//span[@class = "value"]//text()')
+    summary_table = parser.xpath('//meta[@name = "price"]//@content')
+    if not summary_table:
+        quote=np.nan
+    else:
+        quote=(summary_table[0].replace(',',''))     
+        quote=float(quote.replace('$','')) 
+    shares = parser.xpath('//li[@class="kv__item"]//small[text()="Shares Outstanding"]/following-sibling::span//text()') 
+    if not shares:
+        shares=np.nan
+    elif 'N/A' in str(shares[0]):
+        shares=np.nan
+    else:
+        shares=str(shares[0]) 
+        multiplier=(shares)[-1]
+        shares=(((((shares).replace('$','')).replace('B','')).replace('M','')).replace('T','')).replace(',','')
+        shares = shares.replace('K','')
+        if multiplier=='T':
+            multiplier=1000000000000
+        elif multiplier=='B':
+            multiplier=1000000000
+        elif multiplier=='M':
+            multiplier=1000000
+        elif multiplier=='K':
+            multiplier=1000
+        else:
+            multiplier=1
+        shares=float(shares)*multiplier
+    market_cap = parser.xpath('//li[@class="kv__item"]//small[text()="Market Cap"]/following-sibling::span//text()') 
+    if not market_cap:
+        market_cap=np.nan
+    elif 'N/A' in str(market_cap[0]):
+        market_cap=np.nan
+    else: 
+        market_cap = str(market_cap[0])
+        multiplier=(market_cap)[-1]
+        market_cap=(((((market_cap).replace('$','')).replace('B','')).replace('M','')).replace('T','')).replace(',','')
+        market_cap = market_cap.replace('K','')
+        if multiplier=='T':
+            multiplier=1000000000000
+        elif multiplier=='B':
+            multiplier=1000000000
+        elif multiplier=='M':
+            multiplier=1000000
+        elif multiplier=='K':
+            multiplier=1000
+        else:
+            multiplier=1
+        market_cap=float(market_cap)*multiplier
+    return quote, market_cap, shares

@@ -556,7 +556,7 @@ def test_xblr(param, param2,atparam2, folder):
 #list2=[['Major Customer Risk','ifrs-full:DisclosureOfSegmentsMajorCustomersExplanatory'],]
 
 def all_companies(lista,folder,month,year,monthup=0,yearup=0,update=0,updatemonth=0,updateyear=0):
-    #Option Update, to update existing database with new data change update option to 1 and add a month and a year from an existing database file
+    #Option Update, to update existing database with new data change update option to 1 and add initial month and a year from an existing database file
     ## The result will be a dataframe of all data with indicated date informat int -> year*100+month
     #  and stock ticker in "Ticker" column   
     #
@@ -952,22 +952,30 @@ print(get_all(5,3)[1])
 ##upandgetem('09','2020')
 #upandgetem('12','2020')
 #upandgetem('03','2021')
-'''
-upandgetem('06','2021')
-upandgetem('09','2021')
-wd=os.getcwd()   
-datafold='/Data/Chile/'
-#all_companies(lista,wd+datafold,'03','2013')
-all_companies(lista,wd+datafold,'09','2021',update=1,updatemonth='03',updateyear='2013')
-'''
+
+#upandgetem('06','2021')
+
+# upandgetem('09','2021')
+# upandgetem('12','2021')
+# upandgetem('03','2022')
+# upandgetem('06','2022')
+# upandgetem('09','2022')
+# wd=os.getcwd()   
+# datafold='/Data/Chile/'
+# all_companies(lista,wd+datafold,'12','2021',update=1,updatemonth='03',updateyear='2013')
+
+
+
+# all_companies(lista,wd+datafold,'03','2013')
+
 #read_xblr(wd+datafold+'03-2019/AESGENER_03-2019/',lista,'03','2019')
 #print(res)
 #print(listafinal)
 ################
 
-#wd=os.getcwd()   
-#datafold='/Data/Chile/'
-#print(scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
+# wd=os.getcwd()   
+# datafold='/Data/Chile/'
+# print(scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
 
 
 #read_pdf_fil('SECURITY_12-2019.pdf',wd+datafold+'12-2019NOTYET/')

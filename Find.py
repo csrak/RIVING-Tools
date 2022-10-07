@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import datetime
 import os
@@ -8,6 +9,15 @@ import Requests_CL as rcl
 from matplotlib import pyplot as plt
 import time
 import Search_chile as SC
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.firefox import GeckoDriverManager
+chrome_options = Options()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--log-level=3')
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -60,7 +70,7 @@ def quarters_to_years(data,dates):
 		
 	return 0
 
-def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, per_share = False,check_year = True, debug = False, forward = False, last = False):	
+def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, per_share = False,check_year = True, debug = False, forward = False, last = False, inv  = False):	
 	if check_year == True:
 		curr_date = datetime.datetime.now()
 	#corr min substracts earningsaccording to % ownership in minority stakes of the company, activated by default
@@ -114,7 +124,10 @@ def price_to_parameter(df,para,tofile=0,filename='Prices',years=1,corr_min=0, pe
 		else:
 			parameter.append(np.nan*corr)
 	#print(shares)
-	p_para=np.divide(np.multiply(np.array(prices,dtype=np.float32),np.array(shares,dtype=np.float32)),np.array(parameter,dtype=np.float32))
+	if (not inv):
+		p_para=np.divide(np.multiply(np.array(prices,dtype=np.float32),np.array(shares,dtype=np.float32)),np.array(parameter,dtype=np.float32))
+	else:
+		p_para = np.divide(np.array(shares,dtype=np.float32)),np.multiply(np.array(prices,dtype=np.float32),np.array(parameter,dtype=np.float32))
 	#prices_f[para]=parameter
 	if (forward ==True):
 		prices_f['FP/'+para]=p_para
@@ -148,15 +161,26 @@ def quick_ratio(df,tofile=0,filename='Prices',years=1):
 		prices_f.to_csv(filename+'.csv', index = None, header=True)
 	return prices_f
 
+driver_fire = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
 def prices_to_file(datafold): #We select the preferred series of the shares we want to consult, unique series are always included
 	df=rcl.CL.read_data('Database_in_CLP.csv',datafold,1)
 	#we pass present prices to a single file for faster screening, this file should be updated daily
+	driver = webdriver.Chrome(service=Service(ChromeDriverManager().install())) 
 	tickers=rcl.CL.read_data('registered_stocks.csv',datafold,1)
 	tickers=tickers['Ticker'].values.tolist()
 	prices=[]
 	shares=[]
-	for Ticker in tickers:
-		quote,m=ld.live_quote_cl(Ticker)
+	first = True
+	for ix,Ticker in enumerate(tickers):
+		tickers[ix]=Ticker.replace(" ", "")
+		Ticker=tickers[ix]
+		if '(' in Ticker:
+			inxl = Ticker.index('(')
+			Ticker = Ticker[:inxl]
+		quote,m=ld.live_quote_cl(Ticker, driver = driver_fire)
+		if (first):
+			time.sleep(5)
+			first = False
 		prices.append(quote)
 		shares.append(SC.get_shares(df,Ticker,quote,m))
 		#print(pricess)
@@ -204,6 +228,26 @@ def dividend_yields(dfile = '', datafolder = '', dataf = []):
 	prices_f.to_csv('Prices.csv', index = None, header=True)
 	
 
+def create_cleaned_database(df, folder = "", to_tickers = "Data/Chile/"):
+	tickers=rcl.CL.read_data('registered_stocks.csv',to_tickers,1)
+	tickers=tickers['Ticker'].values.tolist()	
+	for Ticker in tickers:
+		df_to_print = pd.DataFrame(columns=['Date'])
+		for col in df.columns:
+			try:
+				datas,datelist = SC.list_by_date(Ticker,col,df)
+			except SystemExit: ## Raised if parameter not exist, normal since some columns are not parameters
+				continue
+			df_temp = pd.DataFrame()
+			df_temp['Date'] = np.array(datelist).astype(int)
+			df_temp[col] = datas[1:]
+			df_to_print = pd.merge(df_to_print, df_temp, on='Date', how='outer')
+		if not(os.path.isdir(folder)) and folder != "":
+			os.mkdir(folder)
+		df_to_print.to_csv(folder + '/'+Ticker+"_datab.csv")
+
+
+
 #####################################################################
 
 
@@ -222,13 +266,13 @@ datafold='/Data/Chile/'
 
 prices_to_file(wd+datafold)
 file_name='Database_in_CLP.csv'
-#Ticker='ZOFRI'
-#df=rcl.CL.read_data(file_name,wd+datafold,1)
-#a,dl=SC.list_by_date(Ticker,'Non-Controlling Profit',df)
-#print(a)
-#b,dl=SC.list_by_date(Ticker,'Net Profit',df)
-#print(b)
-#print((b[-1]-a[-1])/float(b[-1]))
+# # # # #Ticker='ZOFRI'
+# # # # #df=rcl.CL.read_data(file_name,wd+datafold,1)
+# # # # #a,dl=SC.list_by_date(Ticker,'Non-Controlling Profit',df)
+# # # # #print(a)
+# # # # #b,dl=SC.list_by_date(Ticker,'Net Profit',df)
+# # # # #print(b)
+# # # # #print((b[-1]-a[-1])/float(b[-1]))
 
 
 df=rcl.CL.read_data(file_name,wd+datafold,1)
@@ -238,7 +282,12 @@ price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = Fa
 price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = False,forward = True)
 price_to_parameter(df,'Equity',tofile=1,debug = False ,last = True) #Not enough data well reported by companies, use dividend_yields instead
 quick_ratio(df,tofile=1)
-dividend_yields(dfile = 'Dividends__2018_2021.csv', datafolder = wd+datafold, dataf = [])
+#dividend_yields(dfile = 'Dividends__2018_2021.csv', datafolder = wd+datafold, dataf = [])
+
+
+
+### FOR  Machine Learning
+###create_cleaned_database(df, folder = "databases", to_tickers=wd+datafold)
 
 
 

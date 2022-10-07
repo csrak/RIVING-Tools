@@ -56,6 +56,7 @@ def scrap_company_Links(companies_list,month, year):
     out=['Not Found']*companies_list.shape[0]
     found = 0
     try:
+        #print(url)
         page = requests.get(url, headers=agent) 
         page=lh.fromstring(page.content)
     except requests.exceptions.ConnectionError:
@@ -87,11 +88,11 @@ def scrap_company_Links(companies_list,month, year):
 
     #We obtain every <a and take the URLS to a list
     link = page.xpath('//a')    
-        
     #Selected format is searched 0=PDF 1=XBLR 2=BOTH
     for link in link:
         for i in range (0,companies_list.shape[0]):
             rut=companies_list.loc[i,'RUT']
+            #print(rut)
             if 'href' in link.attrib and rut in link.attrib['href']:
                 out[i]=link.attrib['href']
                 out[i]='https://www.cmfchile.cl/institucional/mercados/'+ out[i]               
@@ -469,8 +470,8 @@ def scrap_tickers( offline = False ):
             except ValueError:
                 end=len(pages)
             for j in range((end-start-2)//2):
-                tickers.append(pages[start+1+j])
-                rut.append(pages[end-1].replace('.',''))
+                tickers.append(pages[start+1+j].replace(' ',''))
+                rut.append(pages[end-1].replace('.','').replace(' ',''))
                 razon.append(pages[end-2])
             count=count+1
     final_list=[tickers,rut,razon]

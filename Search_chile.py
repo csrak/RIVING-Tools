@@ -14,7 +14,7 @@ import datetime
 
 #Convert all USD to CLP and clean the table. Need current USD convertion
 #Now optimized and return an archive with the convertions
-def all_CLP(df,const_USD = True):
+def all_CLP(df,const_USD = True, destroy_cum = False):
 	if const_USD == True:
 		for trial in range(0,15):
 			curr_date = datetime.datetime.now()- datetime.timedelta(days=trial)
@@ -37,6 +37,7 @@ def all_CLP(df,const_USD = True):
 		if counter==n2-2:
 			break
 	convertion_rate=USDtoCLP
+	print(convertion_rate)
 	df2=df.iloc[:,0:-2].to_numpy()
 	df0=df2[0::3,:] #Data
 	df1=df2[1::3,:] #Acumulated or isntant indexes
@@ -211,11 +212,14 @@ def list_by_date(ticker, data,df,month=0,year=0):
 							# Also if the next data point we would substract corresponds to another year
 							# meaning we already substracted full year data data is missing and we stop the process
 							if j-1<0 and datelist[j]-100*(datelist[j]//100)!=3:
-								return "Cumulative and Missing data at",[datelist[j]]
+								print("Cumulative and Missing data at",[datelist[j]])
+								value = np.nan
 							break
 						elif datas[2*j+1]==12:
 							#If we have cumulative data but a point is missing we get out informing this needs to be manually adressed
-							return "Cumulative and Missing data at",[datelist[j]]
+							print("Cumulative and Missing data at",[datelist[j]])
+							value = np.nan
+							break
 					#We append the value of the total substraction
 					temp.append(value)					
 				elif datas[2*i-1]==12:				
@@ -376,15 +380,22 @@ def CCO(df): #W.I.P
 
 #datafold='/Data/Chile/Banks/'
 #file_name='bank_database_since_11-2012.csv'
-'''
-datafold='/Data/Chile/'
-file_name='Database_Chile_Since_03-2013.csv'
 
-df=rcl.CL.read_data(file_name,datafold)
-start=time.time()
-df = all_CLP(df)
-print(time.time()-start)
-'''
+
+
+
+# datafold='/Data/Chile/'
+# file_name='Database_Chile_Since_03-2013.csv'
+# print("Starting database conversion to clp")
+# df=rcl.CL.read_data(file_name,datafold)
+# start=time.time()
+# df = all_CLP(df)
+# print(time.time()-start)
+
+
+
+
+
 #tickers='BSANTANDER'
 #datas,datelist=list_by_date(tickers,'1000000',df,12,2012)
 #datas2,datelist=list_by_date(tickers,'2000000',df,12,2012)
