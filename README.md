@@ -11,3 +11,5 @@
  requests  
  PyPDF2  
  matplotlib  
+
+Scrap, clean and process financial forms from Chile and USA
