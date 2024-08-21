@@ -76,8 +76,8 @@ def all_CLP(df,const_USD = True, destroy_cum = False):
 	final_df['Date']=date
 	final_df['TICKER']=tick
 	wd = os.getcwd()
-	datafold=wd+'/Data/Chile/'
-	final_df.to_csv(datafold+'Database_in_CLP.csv', sep=','  , index = None, header=True)
+	#datafold=wd+'/Data/Chile/'
+	final_df.to_csv('Database_in_CLP.csv', sep=','  , index = None, header=True)
 	return final_df
 
 
@@ -383,8 +383,15 @@ def CCO(df): #W.I.P
 
 
 
-
-# datafold='/Data/Chile/'
+# rcl.upandgetem('09','2021')
+# rcl.upandgetem('12','2021')
+# rcl.upandgetem('03','2022')
+# rcl.upandgetem('06','2022')
+# rcl.upandgetem('09','2022')
+# rcl.wd=os.getcwd()
+# rcl.datafold='/Data/Chile/'
+# rcl.all_companies(lista,wd+datafold,'12','2021',update=1,updatemonth='03',updateyear='2013')
+# # datafold='/Data/Chile/'
 # file_name='Database_Chile_Since_03-2013.csv'
 # print("Starting database conversion to clp")
 # df=rcl.CL.read_data(file_name,datafold)

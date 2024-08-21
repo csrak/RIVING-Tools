@@ -19,7 +19,10 @@ from zipfile import BadZipFile
 import fnmatch
 import time
 
+root_dir = Path(__file__).resolve().parent
 
+# Set datafold as a Path object relative to root_dir
+datafold = root_dir / 'Data' / 'Chile'
 
 
 
@@ -137,10 +140,10 @@ def Format_Data(month, year):
 
     file_name='Ticker_data/registered_stocks_'+month+'-'+year+'.csv'
     datafold='/Data/Chile/'
-    ruts=CL.read_data(file_name,datafold)
+    ruts=CL.read_data(file_name)
 
     file_name='registered_stocks.csv'
-    tick=CL.read_data(file_name,datafold)
+    tick=CL.read_data(file_name)
 
     # Then compares both to select right tickers 
     ruts=CL.Tick2Rut(ruts,tick) #Not  used anymore, since compares names manually
@@ -248,12 +251,12 @@ def upandgetem(month1,year1,month2 = 0,year2 = 0,update = 0 ):
                         file_name='registered_stocks.csv'
                         datafold='/Data/Chile/'
 
-                        df=CL.read_data(file_name,datafold)
+                        df=CL.read_data(file_name)
                         get_fillings(month,year,df,datafold,wd)
         elif month2 ==0 and year2==0 :
             file_name='registered_stocks.csv'
             datafold='/Data/Chile/'
-            df=CL.read_data(file_name,datafold)
+            df=CL.read_data(file_name)
             get_fillings(month1,year1,df,datafold,wd)
         else:
            print('Invalid Date 2') 
@@ -555,83 +558,188 @@ def test_xblr(param, param2,atparam2, folder):
 #Useful Data
 #list2=[['Major Customer Risk','ifrs-full:DisclosureOfSegmentsMajorCustomersExplanatory'],]
 
-def all_companies(lista,folder,month,year,monthup=0,yearup=0,update=0,updatemonth=0,updateyear=0):
-    #Option Update, to update existing database with new data change update option to 1 and add initial month and a year from an existing database file
-    ## The result will be a dataframe of all data with indicated date informat int -> year*100+month
-    #  and stock ticker in "Ticker" column   
-    #
+# def all_companies(lista,folder,month,year,monthup=0,yearup=0,update=0,updatemonth=0,updateyear=0):
+#     #Option Update, to update existing database with new data change update option to 1 and add initial month and a year from an existing database file
+#     ## The result will be a dataframe of all data with indicated date informat int -> year*100+month
+#     #  and stock ticker in "Ticker" column
+#     #
+#
+#     #datafold='/Data/Chile/'
+#     #file_name='Ticker_data/registered_stocks_mw.csv'
+#     #tick=CL.read_data(file_name,datafold)
+#     #stocks=[[i,[],[]] for i in tick.loc[:,"Ticker"]]
+#     #print(stocks)
+#     all_stocks_all_dates = []
+#     path=r""+folder
+#     subfolders = [f.path for f in os.scandir(path) if f.is_dir()]
+#     subfolders2 = [i.replace(folder,'') for i in subfolders] #To compare names, easier for selecting right folders
+#     subfolders = [subfolders[i] for i in range(0,len(subfolders)) if len(subfolders2[i])==7] # We select only folders with 7 letters (nothing happens if wrong folder so it is a soft condition)
+#     print('Found these folders:')
+#     print(*subfolders2, sep = "\n")
+#     temp=[]   #Aux for selected subfolders
+#     temp2=[]  #Aux for dates of selected subfolders
+#     for i in range(0,len(subfolders)):
+#         if (int(subfolders2[i][3:7])>int(year) or (int(subfolders2[i][0:2])>=int(month) and subfolders2[i][3:7] == year)): # We select desired dates
+#             temp.append(subfolders[i])
+#             temp2.append(int(subfolders2[i][3:7])*100+int(subfolders2[i][0:2]))
+#     subfolders=temp
+#     subfolders2=temp2
+#     print('Selected Dates:')
+#     print(*subfolders2, sep = "\n")
+#     subfolders= tuple(zip(subfolders, subfolders2)) # Convert to tuple to sue numbers
+#     check=0
+#     #subfolders=sorted(subfolders,key = lambda x: x[1]) #Sort, not used anymore
+#     for i in range(0,len(subfolders)): #Now we go into each selected folder searching for folders with stock data
+#         #for s in stocks:
+#         #     s[1].append(subfolders[i][1])
+#         # Not used anymore
+#         path=r""+subfolders[i][0]
+#         stockfolders = [f.path for f in os.scandir(path) if f.is_dir()]
+#         for j in range(0,len(stockfolders)): #Now for each folder with stock data we get requested data
+#             #print(stockfolders[j])
+#             listafinal=read_xblr(r""+stockfolders[j]+'/',lista,str(subfolders[i][1])[4:6],str(subfolders[i][1])[0:4]) #Main function, we seach for all the aprametersfor the database in the folder
+#             ticker=stockfolders[j].replace(subfolders[i][0],'')
+#             ticker=ticker[1:-8]
+#             print('\n ' + ticker + ' Found for date: ' + str(subfolders[i][1])[0:4] + ' / ' + str(subfolders[i][1])[4:6])
+#             listafinal['Date']=subfolders[i][1]
+#             listafinal['TICKER']=ticker
+#             listafinal['code'] = [ticker+str(subfolders[i][1]) +'-1', ticker+str(subfolders[i][1]) +'-2', ticker+str(subfolders[i][1]) +'-3']
+#             if (j==0):
+#                 print('initial lenght = '+ str(len(listafinal.columns)))
+#                 check=len(listafinal.columns)
+#                 print(listafinal)
+#             if (len(listafinal.columns)!=check):
+#                 print('weird lenght = '+ str(len(listafinal.columns)))
+#                 print('\nNon Existing Company?')
+#                 print(listafinal)
+#             else:
+#                 all_stocks_all_dates.append(listafinal)
+#
+#     all_stocks_all_dates = pd.concat(all_stocks_all_dates)
+#     if update==0:
+#         file_name='Database_Chile_Since_'+month+'-'+year+'.csv'
+#         all_stocks_all_dates.to_csv(folder+file_name, index = None, header=True)
+#         print(all_stocks_all_dates)
+#     else:
+#         try:
+#             file_name='Database_Chile_Since_'+updatemonth+'-'+updateyear+'.csv'
+#             df=CL.read_data(file_name,folder,1)
+#             all_stocks_all_dates=pd.concat([df, all_stocks_all_dates], ignore_index=True)
+#             all_stocks_all_dates.drop_duplicates(inplace = True,keep = 'last',subset = ['code'] )
+#             all_stocks_all_dates.to_csv(folder+file_name,index = None, header=True)
+#             print('Database file '+ folder +file_name + ' written')
+#         except IOError:
+#             print('Database file '+ folder +file_name + 'does not exist')
+#     os.chdir('../../../..')
+#     #if monthup == 0 or yearup == 0:
+#     #    all_banks(folder+'Banks/',month,year)
+#     #else:
+#     #    all_banks(folder+'Banks/',month,year, monthup, yearup)
+import logging
 
-    #datafold='/Data/Chile/'
-    #file_name='Ticker_data/registered_stocks_mw.csv'
-    #tick=CL.read_data(file_name,datafold)
-    #stocks=[[i,[],[]] for i in tick.loc[:,"Ticker"]]
-    #print(stocks)
+
+def all_companies(lista, folder, month, year, monthup=0, yearup=0, update=0, updatemonth=0, updateyear=0):
+    """
+    Collects data from multiple folders representing different months and years,
+    and compiles them into a single DataFrame. The resulting DataFrame can either
+    be saved as a new CSV file or appended to an existing CSV file.
+
+    Parameters:
+    - lista (list): List of parameters or columns to be extracted from the data.
+    - folder (str): The root folder containing subfolders for different dates.
+    - month (str): The starting month (in MM format) for data collection.
+    - year (str): The starting year (in YYYY format) for data collection.
+    - monthup (int, optional): Not currently used (default=0).
+    - yearup (int, optional): Not currently used (default=0).
+    - update (int, optional): If set to 1, the function updates an existing CSV file (default=0).
+    - updatemonth (str, optional): The month from which to start the update, if updating (default=0).
+    - updateyear (str, optional): The year from which to start the update, if updating (default=0).
+
+    Returns:
+    - None: The function saves the resulting DataFrame to a CSV file in the specified folder.
+    """
+    logging.basicConfig(level=logging.INFO)  # Set up basic logging
+
+    # Initialize the root path
+    folder_path = Path(folder)
+    logging.info(f"Folder path: {folder_path}")
+
+    # Check if the folder exists
+    if not folder_path.exists() or not folder_path.is_dir():
+        raise FileNotFoundError(f"The specified folder '{folder_path}' does not exist or is not a directory.")
+
+    # Get subfolders with 7-character names, which are expected to represent dates in MMYYYY format
+    subfolders = [f for f in folder_path.iterdir() if f.is_dir() and len(f.name) == 7]
+
+    # Filter subfolders based on the specified month and year
+    selected_subfolders = []
+    for sf in subfolders:
+        folder_year = int(sf.name[3:7])
+        folder_month = int(sf.name[0:2])
+
+        # Check if the folder represents a date that is on or after the specified month and year
+        if folder_year > int(year) or (folder_year == int(year) and folder_month >= int(month)):
+            selected_subfolders.append((sf, folder_year * 100 + folder_month))
+
+    logging.info(f"Selected Dates: {[sf[1] for sf in selected_subfolders]}")
+
+    # List to hold all dataframes from the selected subfolders
     all_stocks_all_dates = []
-    path=r""+folder
-    subfolders = [f.path for f in os.scandir(path) if f.is_dir()]
-    subfolders2 = [i.replace(folder,'') for i in subfolders] #To compare names, easier for selecting right folders
-    subfolders = [subfolders[i] for i in range(0,len(subfolders)) if len(subfolders2[i])==7] # We select only folders with 7 letters (nothing happens if wrong folder so it is a soft condition)
-    print('Found these folders:')
-    print(*subfolders2, sep = "\n")
-    temp=[]   #Aux for selected subfolders
-    temp2=[]  #Aux for dates of selected subfolders
-    for i in range(0,len(subfolders)):
-        if (int(subfolders2[i][3:7])>int(year) or (int(subfolders2[i][0:2])>=int(month) and subfolders2[i][3:7] == year)): # We select desired dates
-            temp.append(subfolders[i])
-            temp2.append(int(subfolders2[i][3:7])*100+int(subfolders2[i][0:2]))
-    subfolders=temp
-    subfolders2=temp2
-    print('Selected Dates:')
-    print(*subfolders2, sep = "\n")
-    subfolders= tuple(zip(subfolders, subfolders2)) # Convert to tuple to sue numbers
-    check=0
-    #subfolders=sorted(subfolders,key = lambda x: x[1]) #Sort, not used anymore
-    for i in range(0,len(subfolders)): #Now we go into each selected folder searching for folders with stock data
-        #for s in stocks:
-        #     s[1].append(subfolders[i][1])
-        # Not used anymore
-        path=r""+subfolders[i][0]
-        stockfolders = [f.path for f in os.scandir(path) if f.is_dir()]
-        for j in range(0,len(stockfolders)): #Now for each folder with stock data we get requested data
-            #print(stockfolders[j])
-            listafinal=read_xblr(r""+stockfolders[j]+'/',lista,str(subfolders[i][1])[4:6],str(subfolders[i][1])[0:4]) #Main function, we seach for all the aprametersfor the database in the folder
-            ticker=stockfolders[j].replace(subfolders[i][0],'')
-            ticker=ticker[1:-8]
-            print('\n ' + ticker + ' Found for date: ' + str(subfolders[i][1])[0:4] + ' / ' + str(subfolders[i][1])[4:6])
-            listafinal['Date']=subfolders[i][1]
-            listafinal['TICKER']=ticker   
-            listafinal['code'] = [ticker+str(subfolders[i][1]) +'-1', ticker+str(subfolders[i][1]) +'-2', ticker+str(subfolders[i][1]) +'-3']
-            if (j==0):
-                print('initial lenght = '+ str(len(listafinal.columns)))
-                check=len(listafinal.columns)
-                print(listafinal)
-            if (len(listafinal.columns)!=check):
-                print('weird lenght = '+ str(len(listafinal.columns)))
-                print('\nNon Existing Company?')
-                print(listafinal)
-            else:
-                all_stocks_all_dates.append(listafinal)
 
-    all_stocks_all_dates = pd.concat(all_stocks_all_dates)
-    if update==0:
-        file_name='Database_Chile_Since_'+month+'-'+year+'.csv'
-        all_stocks_all_dates.to_csv(folder+file_name, index = None, header=True)
-        print(all_stocks_all_dates)
+    # Iterate over the selected subfolders to process their contents
+    for folder_path, date_code in selected_subfolders:
+        # Get all subfolders within the current date folder
+        stockfolders = [f for f in folder_path.iterdir() if f.is_dir()]
+
+        for stockfolder in stockfolders:
+            # Extract the ticker from the folder name (assuming the name format ends with an 8-character date suffix)
+            ticker = stockfolder.name[:-8]
+            logging.info(f"Processing {ticker} for date {date_code}")
+
+            try:
+                # Read the data for the current ticker and date
+                listafinal = read_xblr(stockfolder, lista, str(date_code)[4:6], str(date_code)[:4])
+            except Exception as e:
+                logging.error(f"Failed to read data from {stockfolder}: {e}")
+                continue
+
+            # Add date, ticker, and a unique code to the dataframe
+            listafinal['Date'] = date_code
+            listafinal['TICKER'] = ticker
+            listafinal['code'] = [f"{ticker}{date_code}-1", f"{ticker}{date_code}-2", f"{ticker}{date_code}-3"]
+
+            # Ensure that all dataframes have the same structure before appending
+            if not all_stocks_all_dates or len(listafinal.columns) == len(all_stocks_all_dates[-1].columns):
+                all_stocks_all_dates.append(listafinal)
+            else:
+                logging.warning(f"Column mismatch for {ticker} at {date_code}, skipping this entry.")
+
+    # Combine all dataframes into a single dataframe
+    all_stocks_all_dates = pd.concat(all_stocks_all_dates, ignore_index=True)
+
+    # Save or update the CSV file
+    if update == 0:
+        # Save as a new CSV file
+        file_name = f'Database_Chile_Since_{month}-{year}.csv'
+        all_stocks_all_dates.to_csv(folder_path / file_name, index=False)
+        logging.info(f"Database saved to {folder_path / file_name}")
     else:
+        # Update an existing CSV file
         try:
-            file_name='Database_Chile_Since_'+updatemonth+'-'+updateyear+'.csv'
-            df=CL.read_data(file_name,folder,1)
-            all_stocks_all_dates=pd.concat([df, all_stocks_all_dates], ignore_index=True)
-            all_stocks_all_dates.drop_duplicates(inplace = True,keep = 'last',subset = ['code'] ) 
-            all_stocks_all_dates.to_csv(folder+file_name,index = None, header=True)
-            print('Database file '+ folder +file_name + ' written')
-        except IOError:
-            print('Database file '+ folder +file_name + 'does not exist')
-    os.chdir('../../../..')
-    #if monthup == 0 or yearup == 0:
-    #    all_banks(folder+'Banks/',month,year)
-    #else:
-    #    all_banks(folder+'Banks/',month,year, monthup, yearup)
+            file_name = f'Database_Chile_Since_{updatemonth}-{updateyear}.csv'
+            existing_df = pd.read_csv(folder_path / file_name)
+
+            # Combine the new data with the existing data, removing duplicates
+            all_stocks_all_dates = pd.concat([existing_df, all_stocks_all_dates], ignore_index=True)
+            all_stocks_all_dates.drop_duplicates(subset=['code'], keep='last', inplace=True)
+
+            # Save the updated dataframe
+            all_stocks_all_dates.to_csv(folder_path / file_name, index=False)
+            logging.info(f"Database updated and saved to {folder_path / file_name}")
+        except FileNotFoundError:
+            logging.error(f"Database file {folder_path / file_name} does not exist. Update failed.")
+        except Exception as e:
+            logging.error(f"Failed to update the database: {e}")
     
 
 
@@ -825,7 +933,7 @@ def all_banks(folder,month,year,monthup='03',yearup='2020',update=0,ticktofile=0
     df1.to_csv(folder+'bank_database_since_'+str(month)+'-'+str(year)+'.csv', index = None, header=True)
 
 
-def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, series = 'A',types = [1,2,3],to_file = False):
+def scrap_dividends(datafolder,  year_i, ticker = '', year_f = 0, trimester = 0, series = 'A',types = [1,2,3],to_file = False):
 
     #Function to get dividends of chilean companies in between a range of years
     #By default obtains sum of dividends per year of all tickers, but more information is available see: "ticker" option*
@@ -847,7 +955,7 @@ def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, s
         month = trimester*3
     file_name='registered_stocks.csv' #We read a specific list of tickers registered a specific trimester
                                                                                       #We select 1 year before the last one, in case the latest year do not have finished trimesters 
-    df1=CL.read_data(file_name,datafold,1)
+    df1=CL.read_data(file_name)
     if ticker != '':
         df1=df1.loc[df1['Ticker']==ticker]
     tickers = df1['Ticker'].tolist()
@@ -886,10 +994,10 @@ def scrap_dividends(datafold,  year_i, ticker = '', year_f = 0, trimester = 0, s
         counter = counter + 1 #needed to keep the count of tickers
     result = pd.concat(final_dataframe)
     if to_file == True: #Save to file usually at Data/Chile/Dividends/
-        if not os.path.exists(datafold+'Dividends/'): 
-            os.mkdir(datafold+'Dividends/')
+        if not os.path.exists(datafold/Path('Dividends/')):
+            os.mkdir(datafold/Path('Dividends/'))
         file_name='Dividends_'+ticker+'_'+str(year_i)+'_'+str(year_f)+'.csv'
-        result.to_csv(datafold+'Dividends/'+file_name, header=True)
+        result.to_csv(datafold/Path('Dividends/')/Path(file_name), header=True)
     return result #Return the dataframe
 
 
@@ -917,65 +1025,54 @@ print(get_all(5,3)[1])
 #update_database
 
 #all_banks('/Data/Chile/Banks/','11','2012', '03', '2020')
-#Update_Data('03','2013',online = True)
-
-#upandgetem('03','2013')
-#upandgetem('06','2013')
-#upandgetem('09','2013')
-#upandgetem('12','2013')
-#upandgetem('03','2014')
-#upandgetem('06','2014')
-#upandgetem('09','2014')
-#upandgetem('12','2014')
-#upandgetem('03','2015')
-#upandgetem('06','2015')
-#upandgetem('09','2015')
-#upandgetem('12','2015')
-#upandgetem('03','2016')
-#upandgetem('06','2016')
-#upandgetem('09','2016')
-#upandgetem('12','2016')
-#upandgetem('03','2017')
-##upandgetem('06','2017')
-#upandgetem('09','2017')
-#upandgetem('12','2017')
-#upandgetem('03','2018')
-#upandgetem('06','2018')
-#upandgetem('09','2018')
-#upandgetem('12','2018')
-#upandgetem('03','2019')
-##upandgetem('06','2019')
-#upandgetem('09','2019')
-#upandgetem('12','2019')
-#upandgetem('03','2020')
-#upandgetem('06','2020')
-##upandgetem('09','2020')
-#upandgetem('12','2020')
-#upandgetem('03','2021')
-
-#upandgetem('06','2021')
-
-# upandgetem('09','2021')
-# upandgetem('12','2021')
-# upandgetem('03','2022')
-# upandgetem('06','2022')
-# upandgetem('09','2022')
-# wd=os.getcwd()   
-# datafold='/Data/Chile/'
-# all_companies(lista,wd+datafold,'12','2021',update=1,updatemonth='03',updateyear='2013')
+Update_Data('03','2013',online = False)
+#
+# upandgetem('03','2013')
+# upandgetem('06','2013')
+# upandgetem('09','2013')
+# upandgetem('12','2013')
+# upandgetem('03','2014')
+# upandgetem('06','2014')
+# upandgetem('09','2014')
+# upandgetem('12','2014')
+# upandgetem('03','2015')
+# upandgetem('06','2015')
+# upandgetem('09','2015')
+# upandgetem('12','2015')
+# upandgetem('03','2016')
+# upandgetem('06','2016')
+# upandgetem('09','2016')
+# upandgetem('12','2016')
+# upandgetem('03','2017')
+# upandgetem('06','2017')
+# upandgetem('09','2017')
+# upandgetem('12','2017')
+# upandgetem('03','2018')
+# upandgetem('06','2018')
+# upandgetem('09','2018')
+# upandgetem('12','2018')
+# upandgetem('03','2019')
+# upandgetem('06','2019')
+# upandgetem('09','2019')
+# upandgetem('12','2019')
+# upandgetem('03','2020')
+# upandgetem('06','2020')
+# upandgetem('09','2020')
+# upandgetem('12','2020')
+# upandgetem('03','2021')
+# upandgetem('06','2021')
 
 
 
-# all_companies(lista,wd+datafold,'03','2013')
+
+#all_companies(lista,wd+datafold,'03','2013')
 
 #read_xblr(wd+datafold+'03-2019/AESGENER_03-2019/',lista,'03','2019')
 #print(res)
 #print(listafinal)
 ################
 
-# wd=os.getcwd()   
-# datafold='/Data/Chile/'
-# print(scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
+
 
 
 #read_pdf_fil('SECURITY_12-2019.pdf',wd+datafold+'12-2019NOTYET/')

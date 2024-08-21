@@ -25,10 +25,56 @@ import io
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.firefox.service import Service as FirefoxService
 
 chrome_options = Options()
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--log-level=3')
+
+# Define a function to handle driver installation with timestamp caching
+def install_chrome_driver():
+    timestamp_file = 'chrome_driver_last_install_time.txt'
+    install_interval = 7 * 24 * 60 * 60  # 7 days in seconds
+
+    if os.path.exists(timestamp_file):
+        with open(timestamp_file, 'r') as f:
+            last_install_time = float(f.read())
+    else:
+        last_install_time = 0
+
+    current_time = time.time()
+
+    if current_time - last_install_time > install_interval:
+        driver_path = ChromeDriverManager().install()
+        with open(timestamp_file, 'w') as f:
+            f.write(str(current_time))
+    else:
+        driver_path = ChromeDriverManager().install()  # use the cached version
+
+    return driver_path
+
+def install_firefox_driver():
+    timestamp_file = 'firefox_driver_last_install_time.txt'
+    install_interval = 7 * 24 * 60 * 60  # 7 days in seconds
+
+    if os.path.exists(timestamp_file):
+        with open(timestamp_file, 'r') as f:
+            last_install_time = float(f.read())
+    else:
+        last_install_time = 0
+
+    current_time = time.time()
+
+    if current_time - last_install_time > install_interval:
+        driver_path = GeckoDriverManager().install()
+        with open(timestamp_file, 'w') as f:
+            f.write(str(current_time))
+    else:
+        driver_path = GeckoDriverManager().install()  # use the cached version
+
+    return driver_path
+
 #First define classes and functions related to handling of different API's, for now since only alphavalue is supported no check is done, the key has to exist
 
 #driver = webdriver.Chrome()
@@ -153,7 +199,7 @@ def USDtoCLPfunc(month,year,day = '01'):
 
 def mw_quote_CL(ticker, driver = ''): #Obtain quote from marketwatch finance
     if driver == '':
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install())) 
+        driver = webdriver.Chrome(service=Service(install_chrome_driver())) 
     ticker=ticker
     #agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = 'https://www.marketwatch.com/investing/stock/' + ticker+'?countrycode=cl'
@@ -216,7 +262,7 @@ def mw_quote_CL(ticker, driver = ''): #Obtain quote from marketwatch finance
 
 def yahoo_quote_CL(ticker, driver = '', series = ''): #Obtain quote from yahoo finance
     if driver == '':
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install())) 
+        driver = webdriver.Chrome(service=Service(install_chrome_driver())) 
     if series == '':
         ticker2=ticker.replace(' ','')+'.SN'
     elif series.lower() == 'a':        
@@ -241,7 +287,7 @@ def yahoo_quote_CL(ticker, driver = '', series = ''): #Obtain quote from yahoo f
  
 def barron_quote_CL(ticker, driver = '', letter = ""): #Obtain quote from yahoo finance      
     if driver == '':
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install())) 
+        driver = webdriver.Chrome(service=Service(install_chrome_driver())) 
     ticker=ticker.replace(' ','')
     ticker2 = ticker + letter
     agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
@@ -281,14 +327,16 @@ def barron_quote_CL(ticker, driver = '', letter = ""): #Obtain quote from yahoo 
             #print(quote)
         except TypeError:
             #print(response.text)
-            quote=np.nan        
+            quote=np.nan
+        except json.decoder.JSONDecodeError:
+            quote=np.nan
     return quote,market_cap
 
 
 def live_quote_cl(ticker, driver =[]):    
     #We hardcode LTM because of specific change in ticker
     if driver == []:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+        driver = webdriver.Chrome(service=Service(install_chrome_driver()))
     market_cap=np.nan
     shares=np.nan
     quote=np.nan
@@ -324,7 +372,7 @@ def live_quote_cl(ticker, driver =[]):
 #print(live_quote_cl('ANDINA.b'))
 def share_count_bs(ticker, driver = ''): #Obtain quote from marketwatch finance
     if driver == '':
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install())) 
+        driver = webdriver.Chrome(service=Service(install_chrome_driver())) 
     ticker=ticker
     #agent = {"User-Agent":'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}
     url = 'https://www.marketwatch.com/investing/stock/' + ticker+'?countrycode=cl'

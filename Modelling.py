@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import time
 import Search_chile as scl
 import tensorflow as tf
-from US_data_vis import list_4f_volume as l4v
+#from US_data_vis import list_4f_volume as l4v
 #############
 rate=10 #in % risk free rate
 
@@ -27,7 +27,8 @@ class alphavalue_formatted_data:
 		df = df[["adjusted close"]]
 		df.rename(columns={'adjusted close':ticker}, inplace=True)
 		#print(df)
-		return df 
+		return df
+'''
 data = alphavalue_formatted_data()
 df = data.get_weekly_quote('TSLA')
 df2 = data.get_weekly_quote('IBM')
@@ -65,7 +66,7 @@ plt.show()
 
 
 #Below printing some stock values vs net sales
-'''
+
 df.head()
 
 fig,axis = plt.subplots()
@@ -142,7 +143,7 @@ def model_all_0(df):
 
 
 
-'''
+
 test = 1
 file_name='Database_in_CLP.csv'
 datafold='/Data/Chile/'
@@ -151,7 +152,7 @@ if test == 0:
 	model_all_0(df)
 ############################ Ignore everything under ths line
 else:
-	ticker='ANDINA'
+	ticker='ENTEL'
 	basic_dcf(ticker,df)
 	data='net operating cashflows'
 	datas,datelist=scl.list_by_date(ticker, data,df)
@@ -202,4 +203,4 @@ else:
 	datas,datelist=scl.list_by_date(ticker, data,df)
 	datas2,datelist=scl.list_by_date(ticker, data2,df)
 	scl.plot_data_time(datelist,datas,datas2)
-'''
+
