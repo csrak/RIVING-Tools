@@ -6,9 +6,6 @@ from django.db.models import Max, Subquery, OuterRef, Q
 def complex_analysis(request):
     return render(request, 'complex_analysis.html')
 
-def complex_analysis(request):
-    return render(request, 'complex_analysis.html')
-
 def filter_ratios(request):
     filters = request.GET.getlist('filters[]')
 
@@ -28,36 +25,30 @@ def filter_ratios(request):
             filter_expr = f'{ratio_name}__{operator}'
             q_filters &= Q(**{filter_expr: float(value)})
 
-    # Subquery to find the latest date for each ticker
-    latest_dates_subquery = FinancialRatio.objects.filter(
+    # Subquery to find the latest date for each ticker in FinancialRatio
+    latest_date_subquery = FinancialRatio.objects.filter(
         ticker=OuterRef('ticker')
     ).order_by('-date').values('date')[:1]
 
-    # Apply the filters and get the data
+    # Apply filters to get the latest financial ratios
     filtered_ratios = FinancialRatio.objects.filter(
-        date=Subquery(latest_dates_subquery)
-    ).filter(q_filters).values('ticker', 'date', *valid_ratios)
-
-    # Annotate with price and market_cap from the PriceData model
-    final_data = filtered_ratios.annotate(
-        price=Subquery(
+        date=Subquery(latest_date_subquery)
+    ).filter(q_filters).annotate(
+        latest_price=Subquery(
             PriceData.objects.filter(
-                ticker=OuterRef('ticker'),
-                date=OuterRef('date')
-            ).values('price')[:1]
+                ticker=OuterRef('ticker')
+            ).order_by('-date').values('price')[:1]
         ),
-        market_cap=Subquery(
+        latest_market_cap=Subquery(
             PriceData.objects.filter(
-                ticker=OuterRef('ticker'),
-                date=OuterRef('date')
-            ).values('market_cap')[:1]
+                ticker=OuterRef('ticker')
+            ).order_by('-date').values('market_cap')[:1]
         )
-    ).order_by('ticker')
+    ).values('ticker', 'date', *valid_ratios, 'latest_price', 'latest_market_cap').order_by('ticker')
 
-    data = list(final_data)
+    data = list(filtered_ratios)
 
     return JsonResponse(data, safe=False)
-
 def get_metrics(request, ticker, metric_name):
     if metric_name not in [field.name for field in FinancialData._meta.get_fields() if field.name not in ['id', 'date', 'ticker']]:
         return JsonResponse({'error': 'Invalid metric name'}, status=400)
