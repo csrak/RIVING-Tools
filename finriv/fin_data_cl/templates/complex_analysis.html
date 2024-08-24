@@ -1,30 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}Complex Analysis{% endblock %}
+{% block title %}Complex Financial Ratios{% endblock %}
 
 {% block content %}
     <h2>Complex Financial Ratios</h2>
     <form id="filter-form" class="mb-4">
         <div class="row">
-            <div class="col-md-4">
-                <label for="ratio_names" class="form-label">Select Ratios</label>
-                <select id="ratio_names" class="form-select" multiple style="height: 200px;">
-                    <option value="pe_ratio">Price-to-Earnings (P/E) Ratio</option>
-                    <option value="pb_ratio">Price-to-Book (P/B) Ratio</option>
-                    <option value="ps_ratio">Price-to-Sales (P/S) Ratio</option>
-                    <option value="peg_ratio">Price/Earnings to Growth (PEG) Ratio</option>
-                    <option value="ev_ebitda">EV/EBITDA</option>
-                    <option value="gross_profit_margin">Gross Profit Margin</option>
-                    <option value="operating_profit_margin">Operating Profit Margin</option>
-                    <option value="net_profit_margin">Net Profit Margin</option>
-                    <option value="return_on_assets">Return on Assets (ROA)</option>
-                    <option value="return_on_equity">Return on Equity (ROE)</option>
-                    <option value="debt_to_equity">Debt-to-Equity Ratio</option>
-                    <option value="current_ratio">Current Ratio</option>
-                    <option value="quick_ratio">Quick Ratio</option>
-                </select>
-            </div>
-            <div class="col-md-8">
+            <div class="col-md-12">
                 <label class="form-label">Filters</label>
                 <div id="filters">
                     <!-- Filter inputs will be added dynamically -->
@@ -40,18 +22,29 @@
             <tr>
                 <th class="sortable">Ticker</th>
                 <th class="sortable">Date</th>
-                <!-- Columns will be added dynamically based on selected ratios -->
+                <th class="sortable">P/E Ratio</th>
+                <th class="sortable">P/B Ratio</th>
+                <th class="sortable">P/S Ratio</th>
+                <th class="sortable">PEG Ratio</th>
+                <th class="sortable">EV/EBITDA</th>
+                <th class="sortable">Gross Profit Margin</th>
+                <th class="sortable">Operating Profit Margin</th>
+                <th class="sortable">Net Profit Margin</th>
+                <th class="sortable">ROA</th>
+                <th class="sortable">ROE</th>
+                <th class="sortable">Debt-to-Equity</th>
+                <th class="sortable">Current Ratio</th>
+                <th class="sortable">Quick Ratio</th>
             </tr>
         </thead>
         <tbody id="ratio_table_body">
             <!-- Rows will be populated by JavaScript -->
         </tbody>
     </table>
-
     <script>
         $(document).ready(function() {
             let filterCount = 0;
-
+    
             // Function to add a new filter input
             function addFilter() {
                 filterCount++;
@@ -83,90 +76,101 @@
                     </div>
                 `);
             }
-
+    
             // Add the first filter on load
             addFilter();
-
+    
             // Handle adding new filters
             $('#add_filter').on('click', function() {
                 addFilter();
             });
-
+    
             // Handle removing filters
             $(document).on('click', '.remove-filter', function() {
                 const filterId = $(this).data('filter-id');
                 $(`#filter-group-${filterId}`).remove();
             });
-
+    
             // Apply filters and fetch data
             $('#apply_filter').on('click', function() {
-                const ratio_names = $('#ratio_names').val();
                 const filters = [];
-
-                // Collect ratios and their corresponding filters
+    
+                // Collect filters 
                 $('.filter-group').each(function() {
                     const ratio = $(this).find('.ratio-name').val();
-                    ratio_names.push(ratio);
-
                     const operator = $(this).find('.filter-operator').val();
                     const value = $(this).find('.filter-value').val();
-                    filters.push(`${operator}:${value}`);
+                    filters.push(`${ratio}:${operator}:${value}`);
                 });
-
+    
+                // Debug: Log the filters
+                console.log('Filters:', filters);
+    
                 $.ajax({
                     url: '{% url "filter_ratios" %}',
                     data: {
-                        'ratio_names[]': ratio_names,
                         'filters[]': filters,
                     },
                     success: function(data) {
                         const tbody = $('#ratio_table_body');
-                        const thead = $('table thead tr');
                         tbody.empty();
-                        thead.empty();
-
-                        // Add static headers
-                        thead.append(`<th class="sortable" data-ratio="ticker">Ticker</th><th class="sortable" data-ratio="date">Date</th>`);
-
-                        // Add dynamic headers
-                        ratio_names.forEach(function(ratio) {
-                            thead.append(`<th class="sortable" data-ratio="${ratio}">${ratio.replace(/_/g, ' ').toUpperCase()}</th>`);
-                        });
-
-                        // Populate the table body with all selected ratios
-                        data.forEach(function(ratio) {
-                            let row = `<tr><td>${ratio.ticker}</td><td>${ratio.date}</td>`;
-                            ratio_names.forEach(function(name) {
-                                row += `<td>${ratio[name]}</td>`;
+    
+                        // Debug: Log the returned data
+                        console.log('Returned Data:', data);
+    
+                        if (data.length === 0) {
+                            tbody.append('<tr><td colspan="17">No data available for the applied filters.</td></tr>');
+                        } else {
+                            // Populate the table body with data for all ratios
+                            data.forEach(function(ratio) {
+                                let row = `<tr><td>${ratio.ticker}</td><td>${ratio.date}</td>`;
+                                row += `<td>${ratio.pe_ratio !== undefined ? ratio.pe_ratio : 'N/A'}</td>`;
+                                row += `<td>${ratio.pb_ratio !== undefined ? ratio.pb_ratio : 'N/A'}</td>`;
+                                row += `<td>${ratio.ps_ratio !== undefined ? ratio.ps_ratio : 'N/A'}</td>`;
+                                row += `<td>${ratio.peg_ratio !== undefined ? ratio.peg_ratio : 'N/A'}</td>`;
+                                row += `<td>${ratio.ev_ebitda !== undefined ? ratio.ev_ebitda : 'N/A'}</td>`;
+                                row += `<td>${ratio.gross_profit_margin !== undefined ? ratio.gross_profit_margin : 'N/A'}</td>`;
+                                row += `<td>${ratio.operating_profit_margin !== undefined ? ratio.operating_profit_margin : 'N/A'}</td>`;
+                                row += `<td>${ratio.net_profit_margin !== undefined ? ratio.net_profit_margin : 'N/A'}</td>`;
+                                row += `<td>${ratio.return_on_assets !== undefined ? ratio.return_on_assets : 'N/A'}</td>`;
+                                row += `<td>${ratio.return_on_equity !== undefined ? ratio.return_on_equity : 'N/A'}</td>`;
+                                row += `<td>${ratio.debt_to_equity !== undefined ? ratio.debt_to_equity : 'N/A'}</td>`;
+                                row += `<td>${ratio.current_ratio !== undefined ? ratio.current_ratio : 'N/A'}</td>`;
+                                row += `<td>${ratio.quick_ratio !== undefined ? ratio.quick_ratio : 'N/A'}</td>`;
+                                row += `<td>${ratio.price !== undefined ? ratio.price : 'N/A'}</td>`;
+                                row += `<td>${ratio.market_cap !== undefined ? ratio.market_cap : 'N/A'}</td>`;
+                                row += `</tr>`;
+                                tbody.append(row);
                             });
-                            row += `</tr>`;
-                            tbody.append(row);
-                        });
-
+                        }
+    
                         // Enable sorting
                         enableSorting();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching data:", error);
                     }
                 });
             });
-
+    
             // Sorting functionality
             function enableSorting() {
                 $('.sortable').off('click').on('click', function() {
                     const ratio = $(this).data('ratio');
                     const rows = $('#ratio_table_body tr').get();
                     const isAsc = $(this).hasClass('asc');
-
+    
                     rows.sort(function(a, b) {
-                        const A = parseFloat($(a).find(`td:eq(${ratio_names.indexOf(ratio) + 2})`).text());
-                        const B = parseFloat($(b).find(`td:eq(${ratio_names.indexOf(ratio) + 2})`).text());
-
+                        const A = parseFloat($(a).find(`td:eq(${ratio})`).text());
+                        const B = parseFloat($(b).find(`td:eq(${ratio})`).text());
+    
                         return (isAsc ? A > B : A < B) ? 1 : -1;
                     });
-
+    
                     $.each(rows, function(index, row) {
                         $('#ratio_table_body').append(row);
                     });
-
+    
                     // Toggle sorting classes
                     $('.sortable').removeClass('asc desc');
                     if (isAsc) {
@@ -178,4 +182,6 @@
             }
         });
     </script>
+    
+    
 {% endblock %}

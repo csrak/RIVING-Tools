@@ -1,57 +1,62 @@
 from django.http import JsonResponse
 from django.shortcuts import render
-from .models import FinancialData, FinancialRatio
+from .models import FinancialData, FinancialRatio, PriceData
 from django.db.models import Max, Subquery, OuterRef, Q
 
 def complex_analysis(request):
     return render(request, 'complex_analysis.html')
 
-def filter_ratios(request):
-    ratio_names = request.GET.getlist('ratio_names[]')  # Get the list of ratios
-    filters = request.GET.getlist('filters[]')  # List of operators and values
+def complex_analysis(request):
+    return render(request, 'complex_analysis.html')
 
-    # List of valid ratio names
+def filter_ratios(request):
+    filters = request.GET.getlist('filters[]')
+
+    # Define valid ratios
     valid_ratios = [
         'pe_ratio', 'pb_ratio', 'ps_ratio', 'peg_ratio', 'ev_ebitda',
         'gross_profit_margin', 'operating_profit_margin', 'net_profit_margin',
         'return_on_assets', 'return_on_equity', 'debt_to_equity', 'current_ratio', 'quick_ratio'
     ]
 
-    # Ensure only valid ratios are processed
-    ratio_names = [r for r in ratio_names if r in valid_ratios]
-
-    if not ratio_names:
-        return JsonResponse({'error': 'No valid ratios selected'}, status=400)
-
-    # Build the filter condition
     q_filters = Q()
-    for i, ratio_name in enumerate(ratio_names):
-        operator, value = filters[i].split(':')
-        if operator not in ['gt', 'lt', 'gte', 'lte']:
-            return JsonResponse({'error': f'Invalid operator for {ratio_name}: {operator}'}, status=400)
-        q_filters &= Q(**{f'{ratio_name}__{operator}': float(value)})
+
+    # Apply each filter
+    for filter_string in filters:
+        ratio_name, operator, value = filter_string.split(':')
+        if ratio_name in valid_ratios and operator in ['gt', 'lt', 'gte', 'lte']:
+            filter_expr = f'{ratio_name}__{operator}'
+            q_filters &= Q(**{filter_expr: float(value)})
 
     # Subquery to find the latest date for each ticker
     latest_dates_subquery = FinancialRatio.objects.filter(
         ticker=OuterRef('ticker')
     ).order_by('-date').values('date')[:1]
 
-    # Filter ratios based on the latest date per ticker and the built conditions
+    # Apply the filters and get the data
     filtered_ratios = FinancialRatio.objects.filter(
         date=Subquery(latest_dates_subquery)
-    ).filter(q_filters).values('ticker', 'date', *ratio_names).order_by('ticker')
+    ).filter(q_filters).values('ticker', 'date', *valid_ratios)
 
-    # Ensure that all selected ratios are returned in the response
-    data = list(filtered_ratios)
+    # Annotate with price and market_cap from the PriceData model
+    final_data = filtered_ratios.annotate(
+        price=Subquery(
+            PriceData.objects.filter(
+                ticker=OuterRef('ticker'),
+                date=OuterRef('date')
+            ).values('price')[:1]
+        ),
+        market_cap=Subquery(
+            PriceData.objects.filter(
+                ticker=OuterRef('ticker'),
+                date=OuterRef('date')
+            ).values('market_cap')[:1]
+        )
+    ).order_by('ticker')
 
-    # For each row, make sure all selected ratio columns are included
-    for row in data:
-        for ratio in ratio_names:
-            if ratio not in row:
-                row[ratio] = None  # or 'N/A', or any other placeholder
+    data = list(final_data)
 
     return JsonResponse(data, safe=False)
-
 
 def get_metrics(request, ticker, metric_name):
     if metric_name not in [field.name for field in FinancialData._meta.get_fields() if field.name not in ['id', 'date', 'ticker']]:
