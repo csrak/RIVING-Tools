@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Complex Analysis{% endblock %}
+
+{% block content %}
+    <h2>Complex Financial Ratios</h2>
+    <form id="filter-form" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <label for="ratio_names" class="form-label">Select Ratios</label>
+                <select id="ratio_names" class="form-select" multiple style="height: 200px;">
+                    <option value="pe_ratio">Price-to-Earnings (P/E) Ratio</option>
+                    <option value="pb_ratio">Price-to-Book (P/B) Ratio</option>
+                    <option value="ps_ratio">Price-to-Sales (P/S) Ratio</option>
+                    <option value="peg_ratio">Price/Earnings to Growth (PEG) Ratio</option>
+                    <option value="ev_ebitda">EV/EBITDA</option>
+                    <option value="gross_profit_margin">Gross Profit Margin</option>
+                    <option value="operating_profit_margin">Operating Profit Margin</option>
+                    <option value="net_profit_margin">Net Profit Margin</option>
+                    <option value="return_on_assets">Return on Assets (ROA)</option>
+                    <option value="return_on_equity">Return on Equity (ROE)</option>
+                    <option value="debt_to_equity">Debt-to-Equity Ratio</option>
+                    <option value="current_ratio">Current Ratio</option>
+                    <option value="quick_ratio">Quick Ratio</option>
+                </select>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Filters</label>
+                <div id="filters">
+                    <!-- Filter inputs will be added dynamically -->
+                </div>
+                <button type="button" id="add_filter" class="btn btn-secondary mt-2">Add Filter</button>
+            </div>
+        </div>
+        <button type="button" id="apply_filter" class="btn btn-primary mt-3">Apply Filter</button>
+    </form>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th class="sortable">Ticker</th>
+                <th class="sortable">Date</th>
+                <!-- Columns will be added dynamically based on selected ratios -->
+            </tr>
+        </thead>
+        <tbody id="ratio_table_body">
+            <!-- Rows will be populated by JavaScript -->
+        </tbody>
+    </table>
+
+    <script>
+        $(document).ready(function() {
+            let filterCount = 0;
+
+            // Function to add a new filter input
+            function addFilter() {
+                filterCount++;
+                $('#filters').append(`
+                    <div class="filter-group mb-2 d-flex align-items-center" id="filter-group-${filterCount}" style="gap: 10px;">
+                        <select class="form-select ratio-name" id="ratio-name-${filterCount}" style="width: 150px;">
+                            <option value="pe_ratio">P/E Ratio</option>
+                            <option value="pb_ratio">P/B Ratio</option>
+                            <option value="ps_ratio">P/S Ratio</option>
+                            <option value="peg_ratio">PEG Ratio</option>
+                            <option value="ev_ebitda">EV/EBITDA</option>
+                            <option value="gross_profit_margin">Gross Profit Margin</option>
+                            <option value="operating_profit_margin">Operating Profit Margin</option>
+                            <option value="net_profit_margin">Net Profit Margin</option>
+                            <option value="return_on_assets">ROA</option>
+                            <option value="return_on_equity">ROE</option>
+                            <option value="debt_to_equity">Debt-to-Equity</option>
+                            <option value="current_ratio">Current Ratio</option>
+                            <option value="quick_ratio">Quick Ratio</option>
+                        </select>
+                        <select class="form-select filter-operator" style="width: 120px;">
+                            <option value="gt">Greater Than</option>
+                            <option value="lt">Less Than</option>
+                            <option value="gte">Greater Than or Equal To</option>
+                            <option value="lte">Less Than or Equal To</option>
+                        </select>
+                        <input type="number" step="any" class="form-control filter-value" placeholder="Value" style="width: 100px;">
+                        <button type="button" class="btn btn-danger remove-filter" data-filter-id="${filterCount}">Remove</button>
+                    </div>
+                `);
+            }
+
+            // Add the first filter on load
+            addFilter();
+
+            // Handle adding new filters
+            $('#add_filter').on('click', function() {
+                addFilter();
+            });
+
+            // Handle removing filters
+            $(document).on('click', '.remove-filter', function() {
+                const filterId = $(this).data('filter-id');
+                $(`#filter-group-${filterId}`).remove();
+            });
+
+            // Apply filters and fetch data
+            $('#apply_filter').on('click', function() {
+                const ratio_names = $('#ratio_names').val();
+                const filters = [];
+
+                // Collect ratios and their corresponding filters
+                $('.filter-group').each(function() {
+                    const ratio = $(this).find('.ratio-name').val();
+                    ratio_names.push(ratio);
+
+                    const operator = $(this).find('.filter-operator').val();
+                    const value = $(this).find('.filter-value').val();
+                    filters.push(`${operator}:${value}`);
+                });
+
+                $.ajax({
+                    url: '{% url "filter_ratios" %}',
+                    data: {
+                        'ratio_names[]': ratio_names,
+                        'filters[]': filters,
+                    },
+                    success: function(data) {
+                        const tbody = $('#ratio_table_body');
+                        const thead = $('table thead tr');
+                        tbody.empty();
+                        thead.empty();
+
+                        // Add static headers
+                        thead.append(`<th class="sortable" data-ratio="ticker">Ticker</th><th class="sortable" data-ratio="date">Date</th>`);
+
+                        // Add dynamic headers
+                        ratio_names.forEach(function(ratio) {
+                            thead.append(`<th class="sortable" data-ratio="${ratio}">${ratio.replace(/_/g, ' ').toUpperCase()}</th>`);
+                        });
+
+                        // Populate the table body with all selected ratios
+                        data.forEach(function(ratio) {
+                            let row = `<tr><td>${ratio.ticker}</td><td>${ratio.date}</td>`;
+                            ratio_names.forEach(function(name) {
+                                row += `<td>${ratio[name]}</td>`;
+                            });
+                            row += `</tr>`;
+                            tbody.append(row);
+                        });
+
+                        // Enable sorting
+                        enableSorting();
+                    }
+                });
+            });
+
+            // Sorting functionality
+            function enableSorting() {
+                $('.sortable').off('click').on('click', function() {
+                    const ratio = $(this).data('ratio');
+                    const rows = $('#ratio_table_body tr').get();
+                    const isAsc = $(this).hasClass('asc');
+
+                    rows.sort(function(a, b) {
+                        const A = parseFloat($(a).find(`td:eq(${ratio_names.indexOf(ratio) + 2})`).text());
+                        const B = parseFloat($(b).find(`td:eq(${ratio_names.indexOf(ratio) + 2})`).text());
+
+                        return (isAsc ? A > B : A < B) ? 1 : -1;
+                    });
+
+                    $.each(rows, function(index, row) {
+                        $('#ratio_table_body').append(row);
+                    });
+
+                    // Toggle sorting classes
+                    $('.sortable').removeClass('asc desc');
+                    if (isAsc) {
+                        $(this).addClass('desc');
+                    } else {
+                        $(this).addClass('asc');
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

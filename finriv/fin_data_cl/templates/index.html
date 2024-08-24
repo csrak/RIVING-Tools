@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}Metric Plotter{% endblock %}
+
+{% block content %}
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h1 class="card-title text-center mb-4">Financial Metric Plotter</h1>
+            <form id="metric-form" class="row g-3">
+                <div class="col-md-6">
+                    <label for="ticker_search" class="form-label">Search Ticker</label>
+                    <input type="text" id="ticker_search" class="form-control" placeholder="Search ticker...">
+                </div>
+                <div class="col-md-6">
+                    <label for="ticker_dropdown" class="form-label">Select Ticker</label>
+                    <select id="ticker_dropdown" class="form-select">
+                        {% for ticker in tickers %}
+                            <option value="{{ ticker }}">{{ ticker }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="metric_dropdown" class="form-label">Select Metric (Max 3)</label>
+                    <select id="metric_dropdown" class="form-select">
+                        {% for metric in metrics %}
+                            <option value="{{ metric }}">{{ metric }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <button type="button" id="add_metric_button" class="btn btn-secondary mt-2">Add Metric</button>
+                </div>
+                <div class="col-md-12">
+                    <div id="selected_metrics"></div>
+                </div>
+                <div class="col-md-12 text-center">
+                    <button type="button" id="get_data_button" class="btn btn-primary mt-4">Get</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="card mt-5 shadow-sm">
+        <div class="card-body">
+            <div id="plot_area" style="width:100%; height:500px;"></div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            let selectedMetrics = [];
+            const maxMetrics = 3;
+
+            // Real-time ticker suggestions
+            $('#ticker_search').on('keyup', function() {
+                var query = $(this).val();
+                $.ajax({
+                    url: '{% url "ticker_suggestions" %}',
+                    data: {'query': query},
+                    success: function(data) {
+                        $('#ticker_dropdown').empty();
+                        $.each(data, function(index, ticker) {
+                            $('#ticker_dropdown').append('<option value="' + ticker + '">' + ticker + '</option>');
+                        });
+                    }
+                });
+            });
+
+            // Add metric
+            $('#add_metric_button').on('click', function() {
+                const metric = $('#metric_dropdown').val();
+                if (selectedMetrics.length < maxMetrics && !selectedMetrics.includes(metric)) {
+                    selectedMetrics.push(metric);
+                    updateSelectedMetricsDisplay();
+                }
+            });
+
+            // Update selected metrics display
+            function updateSelectedMetricsDisplay() {
+                $('#selected_metrics').empty();
+                selectedMetrics.forEach(function(metric, index) {
+                    $('#selected_metrics').append(
+                        '<span class="badge bg-primary metric-label" data-metric="' + metric + '">' + metric +
+                        ' <button type="button" class="btn-close btn-close-white btn-sm remove-metric" data-metric="' + metric + '" aria-label="Remove"></button></span>'
+                    );
+                });
+
+                // Add remove functionality
+                $('.remove-metric').on('click', function() {
+                    const metricToRemove = $(this).data('metric');
+                    selectedMetrics = selectedMetrics.filter(function(metric) {
+                        return metric !== metricToRemove;
+                    });
+                    updateSelectedMetricsDisplay();
+                });
+            }
+
+            // Get data and plot
+            $('#get_data_button').on('click', function() {
+                const ticker = $('#ticker_dropdown').val();
+                if (selectedMetrics.length === 0) {
+                    alert('Please select at least one metric.');
+                    return;
+                }
+
+                $.ajax({
+                    url: '{% url "get_data" %}',
+                    data: {'ticker': ticker, 'metric': selectedMetrics},
+                    success: function(data) {
+                        let traces = [];
+                        selectedMetrics.forEach(function(metric, index) {
+                            const dates = data.map(function(d) { return d.date; });
+                            const values = data.map(function(d) { return d[metric]; });
+
+                            traces.push({
+                                x: dates,
+                                y: values,
+                                name: metric,
+                                type: 'scatter',
+                                mode: 'lines+markers',
+                                yaxis: 'y' + (index + 1),
+                                line: { color: ['#007bff', '#28a745', '#dc3545'][index] }
+                            });
+                        });
+
+                        const layout = {
+                            title: ticker + ' - Metrics Over Time',
+                            xaxis: { title: 'Date' },
+                            yaxis: { title: selectedMetrics[0], side: 'left', showline: true },
+                        };
+
+                        // Add additional Y-axes
+                        if (selectedMetrics.length > 1) {
+                            layout['yaxis2'] = {
+                                title: selectedMetrics[1],
+                                overlaying: 'y',
+                                side: 'right',
+                                showline: true
+                            };
+                        }
+                        if (selectedMetrics.length > 2) {
+                            layout['yaxis3'] = {
+                                title: selectedMetrics[2],
+                                overlaying: 'y',
+                                side: 'right',
+                                position: 0.85,
+                                showline: true
+                            };
+                        }
+
+                        Plotly.newPlot('plot_area', traces, layout);
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

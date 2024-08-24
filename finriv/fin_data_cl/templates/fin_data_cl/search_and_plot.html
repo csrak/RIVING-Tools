@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search and Plot Ticker Data</title>
+    <!-- Include jQuery for AJAX and DOM manipulation -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include Plotly for interactive charts -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Search for a Ticker</h1>
+    <form id="ticker-form">
+        <!-- Input field for ticker search -->
+        <input type="text" id="ticker-search" placeholder="Enter ticker symbol">
+        <!-- Button to trigger the search -->
+        <button type="button" id="search-button">Search</button>
+        <!-- Dropdown menu to select the financial metric to plot -->
+        <select id="column-select">
+            <option value="revenue">Revenue</option>
+            <option value="net_profit">Net Profit</option>
+            <option value="operating_profit">Operating Profit</option>
+            <option value="non_controlling_profit">Non-controlling Profit</option>
+            <option value="eps">EPS</option>
+            <option value="operating_eps">Operating EPS</option>
+            <option value="interest_revenue">Interest Revenue</option>
+            <option value="cash_from_sales">Cash from Sales</option>
+            <option value="cash_from_yield">Cash from Yield</option>
+            <option value="cash_from_rent">Cash from Rent</option>
+            <option value="cash_to_payments">Cash to Payments</option>
+            <option value="cash_to_other_payments">Cash to Other Payments</option>
+            <option value="speculation_cash">Speculation Cash</option>
+            <option value="current_payables">Current Payables</option>
+            <option value="cost_of_sales">Cost of Sales</option>
+            <option value="ebit">EBIT</option>
+            <option value="depreciation">Depreciation</option>
+            <option value="interest">Interest</option>
+            <option value="cash">Cash</option>
+            <option value="current_assets">Current Assets</option>
+            <option value="liabilities">Liabilities</option>
+            <option value="marketable_securities">Marketable Securities</option>
+            <option value="current_other_assets">Current Other Assets</option>
+            <option value="provisions_for_employees">Provisions for Employees</option>
+            <option value="non_current_assets">Non-current Assets</option>
+            <option value="goodwill">Goodwill</option>
+            <option value="intangible_assets">Intangible Assets</option>
+            <option value="assets">Assets</option>
+            <option value="current_liabilities">Current Liabilities</option>
+            <option value="equity">Equity</option>
+            <option value="shares">Shares</option>
+            <option value="inventories">Inventories</option>
+            <option value="shares_authorized">Shares Authorized</option>
+            <option value="net_operating_cashflows">Net Operating Cashflows</option>
+            <option value="net_investing_cashflows">Net Investing Cashflows</option>
+            <option value="net_financing_cashflows">Net Financing Cashflows</option>
+            <option value="bank_non_banking_investing_cashflow">Bank: Non-banking Investing Cashflow</option>
+            <option value="bank_banking_investing_cashflow">Bank: Banking Investing Cashflow</option>
+            <option value="payment_for_supplies">Payment for Supplies</option>
+            <option value="payment_to_employees">Payment to Employees</option>
+            <option value="property_sales_operating">Property Sales (Operating)</option>
+            <option value="dividends_paid">Dividends Paid</option>
+            <option value="forex">Forex</option>
+            <option value="trade_receivables">Trade Receivables</option>
+            <option value="prepayments">Prepayments</option>
+            <option value="cash_on_hands">Cash on Hands</option>
+            <option value="cash_on_banks">Cash on Banks</option>
+            <option value="cash_short_investment">Cash Short Investment</option>
+            <option value="employee_benefits">Employee Benefits</option>
+        </select>
+    </form>
+    <!-- Unordered list to display suggestions -->
+    <ul id="suggestions"></ul>
+    <!-- Div to display the Plotly chart -->
+    <div id="plot"></div>
+
+    <script>
+        $(document).ready(function() {
+            // Trigger search when typing in the search bar
+            $('#ticker-search').on('keyup', function() {
+                let query = $(this).val();
+                if (query) {
+                    $.ajax({
+                        url: "{% url 'search_ticker' %}",
+                        data: { 'term': query },
+                        success: function(data) {
+                            let suggestions = $('#suggestions');
+                            suggestions.empty();
+                            data.forEach(function(ticker) {
+                                suggestions.append('<li>' + ticker + '</li>');
+                            });
+
+                            // Add click event to each suggestion
+                            $('li').on('click', function() {
+                                let selected_ticker = $(this).text();
+                                $('#ticker-search').val(selected_ticker);
+                                suggestions.empty();
+                                fetchAndPlotData(selected_ticker);
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error fetching suggestions:', status, error);
+                        }
+                    });
+                } else {
+                    $('#suggestions').empty();
+                }
+            });
+
+            // Trigger search when clicking the search button
+            $('#search-button').on('click', function() {
+                let selected_ticker = $('#ticker-search').val();
+                if (selected_ticker) {
+                    fetchAndPlotData(selected_ticker);
+                }
+            });
+
+            function fetchAndPlotData(ticker) {
+                let column = $('#column-select').val();  // Get the selected column
+                $.ajax({
+                    url: "{% url 'get_ticker_data' 'TICKER_PLACEHOLDER' %}".replace('TICKER_PLACEHOLDER', ticker),
+                    data: { 'column': column },  // Pass the selected column to the server
+                    success: function(data) {
+                        let dates = data['dates'].map(date => new Date(date));
+                        let values = data[column];
+
+                        let trace = {
+                            x: dates,
+                            y: values,
+                            mode: 'lines+markers',
+                            name: column.replace('_', ' ')
+                        };
+
+                        let layout = {
+                            title: `${column.replace('_', ' ')} for ${ticker}`,
+                            xaxis: { title: 'Date' },
+                            yaxis: { title: column.replace('_', ' ') }
+                        };
+
+                        Plotly.newPlot('plot', [trace], layout);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching data for ticker:', status, error);
+                        alert('Failed to retrieve data for ' + ticker);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
