@@ -9,7 +9,10 @@ import time
 import datetime
 #############
 
+root_dir = Path(__file__).resolve().parent
 
+# Set datafold as a Path object relative to root_dir
+datafold = root_dir / 'Data' / 'Chile'
 
 
 #Convert all USD to CLP and clean the table. Need current USD convertion
@@ -77,7 +80,7 @@ def all_CLP(df,const_USD = True, destroy_cum = False):
 	final_df['TICKER']=tick
 	wd = os.getcwd()
 	#datafold=wd+'/Data/Chile/'
-	final_df.to_csv('Database_in_CLP.csv', sep=','  , index = None, header=True)
+	final_df.to_csv(datafold/ Path('Database_in_CLP.csv'), sep=','  , index = None, header=True)
 	return final_df
 
 

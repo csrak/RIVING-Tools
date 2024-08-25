@@ -96,8 +96,11 @@ class Command(BaseCommand):
 
         def save_financial_data(ticker, date, **kwargs):
             cleaned_data = {k: (v if pd.notna(v) else None) for k, v in kwargs.items()}
-            financial_data = FinancialData(ticker=ticker, date=date, **cleaned_data)
-            financial_data.save()
+            FinancialData.objects.update_or_create(
+                ticker=ticker,
+                date=date,
+                defaults=cleaned_data
+            )
 
         ticker_list, tables_list = parse_and_create_database(file_path)
 

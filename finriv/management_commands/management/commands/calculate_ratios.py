@@ -41,15 +41,25 @@ def calculate_ratios(ticker, date):
 
         # Fetch the most recent price and market cap data
         price_data = PriceData.objects.filter(ticker=ticker).order_by('-date').first()
+        peg_ratio = 0
 
         if not price_data or not latest_financial_data:
             return None  # Skip if data is missing
 
-        # Calculate ratios with robust handling for None and zero values
-        pe_ratio = to_decimal(price_data.price) / to_decimal(aggregated_data['eps']) if aggregated_data['eps'] else None
-        pb_ratio = to_decimal(price_data.price) / to_decimal(balance_sheet_data['equity'] / balance_sheet_data['shares']) if balance_sheet_data['equity'] and balance_sheet_data['shares'] else None
-        ps_ratio = to_decimal(price_data.price) / to_decimal(aggregated_data['revenue'] / balance_sheet_data['shares']) if aggregated_data['revenue'] and balance_sheet_data['shares'] else None
-        peg_ratio = to_decimal(pe_ratio) / to_decimal(aggregated_data['eps'] / 4) if pe_ratio and aggregated_data['eps'] else None  # Assuming EPS growth is part of aggregated_data
+        # Calculate ratios with robust handling for None and zero values price_data.market_cap
+        if aggregated_data['eps']:
+            pe_ratio = to_decimal(price_data.price) / to_decimal(aggregated_data['eps'])
+        elif price_data.market_cap and aggregated_data['net_profit']:
+            pe_ratio = to_decimal(price_data.market_cap) / to_decimal(aggregated_data['net_profit'])
+        else:
+            pe_ratio = None
+
+        if price_data.market_cap:
+            pb_ratio = to_decimal(price_data.market_cap) / to_decimal(balance_sheet_data['equity'] ) if balance_sheet_data['equity']  else None
+            ps_ratio = to_decimal(price_data.market_cap) / to_decimal(aggregated_data['revenue'] ) if aggregated_data['revenue'] else None
+        elif balance_sheet_data['shares']:
+            pb_ratio = to_decimal(price_data.price) / to_decimal(balance_sheet_data['equity'] / balance_sheet_data['shares']) if balance_sheet_data['equity'] else None
+            ps_ratio = to_decimal(price_data.price) / to_decimal(aggregated_data['revenue'] / balance_sheet_data['shares']) if aggregated_data['revenue']  else None
 
         # Enterprise Value calculation using market cap if available
         enterprise_value = to_decimal(price_data.market_cap) + to_decimal(balance_sheet_data['liabilities']) - to_decimal(balance_sheet_data['cash']) if price_data.market_cap else None

@@ -24,7 +24,11 @@ root_dir = Path(__file__).resolve().parent
 # Set datafold as a Path object relative to root_dir
 datafold = root_dir / 'Data' / 'Chile'
 
+import logging
 
+import warnings
+from bs4 import GuessedAtParserWarning
+warnings.filterwarnings('ignore', category=GuessedAtParserWarning)
 
 #We define hardcoded sets and lists that we will need to find the right values when parsing the fillings
 #class request_cl:
@@ -635,8 +639,6 @@ def test_xblr(param, param2,atparam2, folder):
 #     #    all_banks(folder+'Banks/',month,year)
 #     #else:
 #     #    all_banks(folder+'Banks/',month,year, monthup, yearup)
-import logging
-
 
 def all_companies(lista, folder, month, year, monthup=0, yearup=0, update=0, updatemonth=0, updateyear=0):
     """
@@ -685,11 +687,18 @@ def all_companies(lista, folder, month, year, monthup=0, yearup=0, update=0, upd
 
     # List to hold all dataframes from the selected subfolders
     all_stocks_all_dates = []
+    if update == 1:
+        file_name = f'Database_Chile_Since_{updatemonth}-{updateyear}.csv'
+        file_path = folder_path / file_name
 
+        # Check if the file exists before proceeding with the update
+        if not file_path.exists():
+            logging.error(f"Database file {file_path} does not exist. Update failed.")
+            return
     # Iterate over the selected subfolders to process their contents
-    for folder_path, date_code in selected_subfolders:
+    for f_path, date_code in selected_subfolders:
         # Get all subfolders within the current date folder
-        stockfolders = [f for f in folder_path.iterdir() if f.is_dir()]
+        stockfolders = [f for f in f_path.iterdir() if f.is_dir()]
 
         for stockfolder in stockfolders:
             # Extract the ticker from the folder name (assuming the name format ends with an 8-character date suffix)
@@ -738,6 +747,7 @@ def all_companies(lista, folder, month, year, monthup=0, yearup=0, update=0, upd
             logging.info(f"Database updated and saved to {folder_path / file_name}")
         except FileNotFoundError:
             logging.error(f"Database file {folder_path / file_name} does not exist. Update failed.")
+            exit()
         except Exception as e:
             logging.error(f"Failed to update the database: {e}")
     

@@ -305,12 +305,12 @@ if __name__ == "__main__":
     #rcl.upandgetem('03','2024')
     #rcl.upandgetem('06','2024')
 
-    # rcl.all_companies(rcl.lista,wd+datafold,'09','2023',update=1,updatemonth='03',updateyear='2013')
-    # file_name='Database_Chile_Since_03-2013.csv'
-    # print("Starting database conversion to clp")
-    # df=rcl.CL.read_data(file_name)
-    # start=time.time()
-    # df = SC.all_CLP(df)
+    # rcl.all_companies(rcl.lista,root_dir/Path(datafold),'03','2023',update=1,updatemonth='03',updateyear='2013')
+    file_name='Database_Chile_Since_03-2013.csv'
+    print("Starting database conversion to clp")
+    df=rcl.CL.read_data(file_name)
+    start=time.time()
+    df = SC.all_CLP(df)
     # print(time.time()-start)
     # prices_to_file(wd+datafold)
     file_name='Database_in_CLP.csv'
@@ -326,15 +326,15 @@ if __name__ == "__main__":
     # # # # #print(b)
     # # # # #print((b[-1]-a[-1])/float(b[-1]))
 
-
-    df=rcl.CL.read_data(file_name)
-    price_to_parameter(df,'net profit',tofile=1, corr_min = 1,debug = False)
-    price_to_parameter(df,'net profit',tofile=1, corr_min = 1,debug = False, forward = True)
-    price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = False)
-    price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = False,forward = True)
-    price_to_parameter(df,'Equity',tofile=1,debug = False ,last = True) #Not enough data well reported by companies, use dividend_yields instead
-    quick_ratio(df,tofile=1)
-    dividend_yields(dfile = 'Dividends__2018_2024.csv', datafolder = datafold, dataf = [])
+    #
+    # df=rcl.CL.read_data(file_name)
+    # price_to_parameter(df,'net profit',tofile=1, corr_min = 1,debug = False)
+    # price_to_parameter(df,'net profit',tofile=1, corr_min = 1,debug = False, forward = True)
+    # price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = False)
+    # price_to_parameter(df,'net operating cashflows',tofile=1,corr_min = 1,debug = False,forward = True)
+    # price_to_parameter(df,'Equity',tofile=1,debug = False ,last = True) #Not enough data well reported by companies, use dividend_yields instead
+    # quick_ratio(df,tofile=1)
+    # dividend_yields(dfile = 'Dividends__2018_2024.csv', datafolder = datafold, dataf = [])
 
 
 

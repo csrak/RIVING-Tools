@@ -1,7 +1,9 @@
 from django.http import JsonResponse
 from django.shortcuts import render
 from .models import FinancialData, FinancialRatio, PriceData
-from django.db.models import Max, Subquery, OuterRef, Q
+from django.db.models import Q, Subquery, OuterRef, DecimalField, F
+from django.db.models.functions import Cast
+
 
 def complex_analysis(request):
     return render(request, 'complex_analysis.html')
@@ -34,21 +36,26 @@ def filter_ratios(request):
     filtered_ratios = FinancialRatio.objects.filter(
         date=Subquery(latest_date_subquery)
     ).filter(q_filters).annotate(
-        latest_price=Subquery(
-            PriceData.objects.filter(
-                ticker=OuterRef('ticker')
-            ).order_by('-date').values('price')[:1]
+        latest_price=Cast(
+            Subquery(
+                PriceData.objects.filter(
+                    ticker=OuterRef('ticker')
+                ).order_by('-date').values('price')[:1]
+            ), DecimalField(max_digits=20, decimal_places=2)
         ),
-        latest_market_cap=Subquery(
-            PriceData.objects.filter(
-                ticker=OuterRef('ticker')
-            ).order_by('-date').values('market_cap')[:1]
+        latest_market_cap=Cast(
+            Subquery(
+                PriceData.objects.filter(
+                    ticker=OuterRef('ticker')
+                ).order_by('-date').values('market_cap')[:1]
+            ), DecimalField(max_digits=30, decimal_places=2)
         )
     ).values('ticker', 'date', *valid_ratios, 'latest_price', 'latest_market_cap').order_by('ticker')
 
     data = list(filtered_ratios)
 
     return JsonResponse(data, safe=False)
+
 def get_metrics(request, ticker, metric_name):
     if metric_name not in [field.name for field in FinancialData._meta.get_fields() if field.name not in ['id', 'date', 'ticker']]:
         return JsonResponse({'error': 'Invalid metric name'}, status=400)
