@@ -1,6 +1,20 @@
 from django.db import models
 from decimal import Decimal
+from django.contrib.postgres.fields import ArrayField, JSONField
 
+class FinancialReport(models.Model):
+    ticker = models.CharField(max_length=20)
+    year = models.PositiveIntegerField()
+    month = models.PositiveIntegerField()
+
+    business_overview = models.TextField()
+    risks = JSONField()  # Stores list of risks
+    metrics = JSONField()  # Stores metrics such as revenue, net income, etc.
+    historical_changes = JSONField()  # Stores list of historical changes
+    future_outlook = JSONField()  # Stores list of future outlooks
+
+    def __str__(self):
+        return f"Financial Report for {self.ticker} ({self.month}-{self.year})"
 class TickerData(models.Model):
     ticker = models.CharField(max_length=10)
 
@@ -91,8 +105,22 @@ class FinancialRatio(models.Model):
     debt_to_equity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Debt-to-Equity
     current_ratio = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Current Ratio
     quick_ratio = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Quick Ratio
-
+    dividend_yield = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Dividend Yield
+    before_dividend_yield = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Dividend Yield last year
     class Meta:
         unique_together = ('ticker', 'date')
         verbose_name = 'Financial Ratio'
         verbose_name_plural = 'Financial Ratios'
+class DividendSummary(models.Model):
+    ticker = models.CharField(max_length=10)
+    year = models.IntegerField()
+    total_dividends = models.DecimalField(max_digits=20, decimal_places=2)
+    dividend_count = models.IntegerField()
+
+    class Meta:
+        unique_together = ('ticker', 'year')
+        verbose_name = 'Dividend Summary'
+        verbose_name_plural = 'Dividend Summaries'
+        get_latest_by = 'year'  # Add this line
+    def __str__(self):
+        return f"{self.ticker} - {self.year}"

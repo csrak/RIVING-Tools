@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
-{% block title %}Complex Financial Ratios{% endblock %}
+{% block title %}Screener for Financial Ratios{% endblock %}
 
 {% block content %}
-    <h2>Complex Financial Ratios</h2>
+    <h2>Screener for Financial Ratios</h2>
     
     <!-- Filter form section -->
     <form id="filter-form" class="mb-4">
@@ -39,6 +39,8 @@
                 <th class="sortable" data-ratio="debt_to_equity">Debt-to-Equity</th>
                 <th class="sortable" data-ratio="current_ratio">Current Ratio</th>
                 <th class="sortable" data-ratio="quick_ratio">Quick Ratio</th>
+                <th class="sortable" data-ratio="dividend_yield">Dividend Yield</th>
+                <th class="sortable" data-ratio="before_dividend_yield">Last Div Yield</th>
             </tr>
         </thead>
         <tbody id="ratio_table_body">
@@ -72,6 +74,8 @@
                             <option value="debt_to_equity">Debt-to-Equity</option>
                             <option value="current_ratio">Current Ratio</option>
                             <option value="quick_ratio">Quick Ratio</option>
+                            <option value="dividend_yield">Dividend Yield</option>
+                            <option value="before_dividend_yield">Last Div Yield</option>
                         </select>
                         <select class="form-select filter-operator" style="width: 120px;">
                             <!-- Options for filter operators -->
@@ -156,6 +160,8 @@
                         row += `<td>${ratio.debt_to_equity !== undefined ? parseFloat(ratio.debt_to_equity).toFixed(2) : 'N/A'}</td>`;
                         row += `<td>${ratio.current_ratio !== undefined ? parseFloat(ratio.current_ratio).toFixed(2) : 'N/A'}</td>`;
                         row += `<td>${ratio.quick_ratio !== undefined ? parseFloat(ratio.quick_ratio).toFixed(2) : 'N/A'}</td>`;
+                        row += `<td>${ratio.dividend_yield !== undefined ? parseFloat(ratio.dividend_yield).toFixed(2) : 'N/A'}</td>`;
+                        row += `<td>${ratio.before_dividend_yield !== undefined ? parseFloat(ratio.before_dividend_yield).toFixed(2) : 'N/A'}</td>`;
                         row += `</tr>`;
                         tbody.append(row);  // Append the row to the table body
                     });

@@ -5,7 +5,7 @@ from django.db.models import Q, Subquery, OuterRef, DecimalField, F
 from django.db.models.functions import Cast
 
 
-def complex_analysis(request):
+def screener(request):
     return render(request, 'complex_analysis.html')
 
 def filter_ratios(request):
@@ -15,7 +15,7 @@ def filter_ratios(request):
     valid_ratios = [
         'pe_ratio', 'pb_ratio', 'ps_ratio', 'peg_ratio', 'ev_ebitda',
         'gross_profit_margin', 'operating_profit_margin', 'net_profit_margin',
-        'return_on_assets', 'return_on_equity', 'debt_to_equity', 'current_ratio', 'quick_ratio'
+        'return_on_assets', 'return_on_equity', 'debt_to_equity', 'current_ratio', 'quick_ratio', 'dividend_yield', 'before_dividend_yield'
     ]
 
     q_filters = Q()

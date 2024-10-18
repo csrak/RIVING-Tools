@@ -128,7 +128,7 @@ def scrap_file_links(url, filet):
             out = re.sub(' ', '%20', out)
             filet = 1
             #print("Works",link.text_content())
-        elif 'href' in link.attrib and 'PDF' in link.text_content():
+        elif 'href' in link.attrib and 'Razonado' in link.text_content():
             out = link.attrib['href']
             out = f'https://www.cmfchile.cl/institucional{out[2:]}'
             out = re.sub(' ', '%20', out)
@@ -241,7 +241,7 @@ def scrap_fillings(urls, filenames, update=0):
                         continue
             filename = Path(filenames[i])
             filepath = root_dir / datafold / filename
-            if update != 0 or not os.path.exists(filepath):
+            if (update != 0 or not os.path.exists(filepath)) or ".pdf" in str(filepath):
                 with open(filepath, 'wb') as f:
                     f.write(myfile.content)
                 temp = str(filepath)

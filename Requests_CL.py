@@ -176,7 +176,7 @@ def Update_Data(month, year, online = False):
     #Format_Data(month, year)
     return 0
 
-def get_fillings(month,year,df,datafold,wd): 
+def get_fillings(month,year,df):
     CL.get_ruts(df)
     print(df)
     a=CL.scrap_company_Links(df,month,year)
@@ -197,9 +197,10 @@ def get_fillings(month,year,df,datafold,wd):
             fnames[i]=month+'-'+year+'/'+df.loc[i,'Ticker']+'_'+month+'-'+year+'.pdf'
         
     #wd=os.getcwd()
-    print(wd+datafold+month+'-'+year)    
-    if not os.path.exists(wd+datafold+month+'-'+year):
-        os.mkdir(wd+datafold+month+'-'+year)
+    folder_data = datafold/Path((month+'-'+year))
+    print(folder_data)
+    if not os.path.exists(folder_data):
+        os.mkdir(folder_data)
 
     #print(flinks)
     #print(len(flinks))
@@ -243,7 +244,7 @@ def upandgetem(month1,year1,month2 = 0,year2 = 0,update = 0 ):
     #Optional month2 and year2
     #if used month1 and month2 is the starting date, and month2 year 2 is the last date to retrieve
     wd=os.getcwd()   
-
+    print("here")
     if update == 0 :
         Update_Data(month1,year1)
     if month1 in months and year1 in years: # check if valid dates
@@ -253,15 +254,13 @@ def upandgetem(month1,year1,month2 = 0,year2 = 0,update = 0 ):
                 for month in months:
                     if (year!=year1 or int(month1)>=int(month)) and (year!=year2 or int(month2)<=int(month)):
                         file_name='registered_stocks.csv'
-                        datafold='/Data/Chile/'
 
-                        df=CL.read_data(file_name)
-                        get_fillings(month,year,df,datafold,wd)
+                        df=CL.read_data(datafold / Path(file_name))
+                        get_fillings(month,year,df)
         elif month2 ==0 and year2==0 :
             file_name='registered_stocks.csv'
-            datafold='/Data/Chile/'
-            df=CL.read_data(file_name)
-            get_fillings(month1,year1,df,datafold,wd)
+            df=CL.read_data(datafold / Path(file_name))
+            get_fillings(month1,year1,df)
         else:
            print('Invalid Date 2') 
     else:

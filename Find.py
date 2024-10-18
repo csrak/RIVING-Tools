@@ -292,28 +292,28 @@ if __name__ == "__main__":
     wd=os.getcwd()
     datafold='Data/Chile/'
     #
-    # rcl.upandgetem('09','2021')
-    # rcl.upandgetem('12','2021')
-    # rcl.upandgetem('03','2022')
-    #rcl.upandgetem('06','2022')
-    #rcl.upandgetem('09','2022')
-    #rcl.upandgetem('12','2022')
-    #rcl.upandgetem('03','2023')
-    #rcl.upandgetem('06','2023')
-    #rcl.upandgetem('09','2023')
-    #rcl.upandgetem('12','2023')
-    #rcl.upandgetem('03','2024')
-    #rcl.upandgetem('06','2024')
+    rcl.upandgetem('09','2021')
+    rcl.upandgetem('12','2021')
+    rcl.upandgetem('03','2022')
+    rcl.upandgetem('06','2022')
+    rcl.upandgetem('09','2022')
+    rcl.upandgetem('12','2022')
+    rcl.upandgetem('03','2023')
+    rcl.upandgetem('06','2023')
+    rcl.upandgetem('09','2023')
+    rcl.upandgetem('12','2023')
+    rcl.upandgetem('03','2024')
+    rcl.upandgetem('06','2024')
 
     # rcl.all_companies(rcl.lista,root_dir/Path(datafold),'03','2023',update=1,updatemonth='03',updateyear='2013')
-    file_name='Database_Chile_Since_03-2013.csv'
-    print("Starting database conversion to clp")
-    df=rcl.CL.read_data(file_name)
-    start=time.time()
-    df = SC.all_CLP(df)
-    # print(time.time()-start)
-    # prices_to_file(wd+datafold)
-    file_name='Database_in_CLP.csv'
+    # file_name='Database_Chile_Since_03-2013.csv'
+    # print("Starting database conversion to clp")
+    # df=rcl.CL.read_data(file_name)
+    # start=time.time()
+    # df = SC.all_CLP(df)
+    # # print(time.time()-start)
+    # # prices_to_file(wd+datafold)
+    # file_name='Database_in_CLP.csv'
 
     #print(rcl.scrap_dividends(wd+datafold,2018, types = [1,2,3], to_file = True))
 

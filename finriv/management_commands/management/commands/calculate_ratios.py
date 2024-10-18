@@ -1,13 +1,41 @@
 import math
 from django.core.management.base import BaseCommand
-from fin_data_cl.models import FinancialData, FinancialRatio, PriceData
+from fin_data_cl.models import FinancialData, FinancialRatio, PriceData, DividendSummary
 from decimal import Decimal
 
+
+def get_latest_dividend_total(ticker):
+    """
+    Retrieves the total dividends for the latest year for a given ticker using the latest() method.
+
+    Args:
+        ticker (str): The ticker symbol of the company.
+
+    Returns:
+        dict: A dictionary containing 'ticker', 'year', 'total_dividends', and 'dividend_count'.
+              Returns None if no records are found for the ticker.
+    """
+    latest_dividend = DividendSummary.objects.filter(ticker=ticker.upper()).latest()
+
+    if latest_dividend:
+        return {
+            'ticker': latest_dividend.ticker,
+            'year': latest_dividend.year,
+            'total_dividends': latest_dividend.total_dividends,
+            'dividend_count': latest_dividend.dividend_count
+        }
+    else:
+        print(f"Dividends not found for {ticker}")
+        return None
 def calculate_ratios(ticker, date):
     try:
+
         # Get the latest available date for balance sheet data
         latest_financial_data = FinancialData.objects.filter(ticker=ticker, date=date).first()
-
+        latest_divs = get_latest_dividend_total(ticker)['total_dividends']
+        before_divs =  DividendSummary.objects.filter(ticker=ticker.upper()).order_by('-year')[:2]
+        if len(before_divs) >= 2:
+            before_divs = before_divs[1].total_dividends
         # Fetch the last four quarters for income statement data to annualize
         last_4_quarters = FinancialData.objects.filter(ticker=ticker).order_by('-date')[:4]
 
@@ -73,7 +101,8 @@ def calculate_ratios(ticker, date):
         debt_to_equity = to_decimal(balance_sheet_data['liabilities'] / balance_sheet_data['equity']) if balance_sheet_data['equity'] else None
         current_ratio = to_decimal(balance_sheet_data['current_assets'] / balance_sheet_data['current_liabilities']) if balance_sheet_data['current_liabilities'] else None
         quick_ratio = to_decimal((balance_sheet_data['current_assets'] - balance_sheet_data['inventories']) / balance_sheet_data['current_liabilities']) if balance_sheet_data['current_liabilities'] else None
-
+        dividend_yield = to_decimal(latest_divs / price_data.price)  if latest_divs else None
+        before_dividend_yield = to_decimal(before_divs / price_data.price)  if latest_divs else None
         # Create or update the financial ratio record
         financial_ratio, created = FinancialRatio.objects.update_or_create(
             ticker=ticker,
@@ -92,6 +121,8 @@ def calculate_ratios(ticker, date):
                 'debt_to_equity': debt_to_equity,
                 'current_ratio': current_ratio,
                 'quick_ratio': quick_ratio,
+                'dividend_yield':dividend_yield,
+                'before_dividend_yield':before_dividend_yield
             }
         )
 
